@@ -1,0 +1,46 @@
+Good — this is a solid, well-organized project. Before I touch any page, I need the **foundation files** that establish the design system. If I improve `Dashboard.jsx` first without knowing your tokens, colors, spacing scale, or shared UI components, I'll be inventing things and the whole app will drift.
+
+So please send these **in this order**:
+
+### Batch 1 — Foundation (send these first)
+1. `tailwind.config.js` — defines your tokens (colors, radius, spacing, fonts)
+2. `src/index.css` — global styles, CSS variables, base layer
+3. `src/lib/utils.js` — likely `cn()` and helpers
+4. `src/components/ui.jsx` — your shared primitives (this is the biggest lever; everything else inherits from it)
+
+### Batch 2 — Layout shell (send after Batch 1)
+5. `src/App.jsx` — routing + layout composition
+6. `src/components/Sidebar.jsx`
+7. `src/components/Header.jsx`
+8. `src/components/PageHeader.jsx`
+
+### Batch 3 — Reusable building blocks
+9. `src/components/EmptyState.jsx`
+10. `src/components/FormField.jsx`
+11. `src/components/KpiCard.jsx`
+12. `src/components/MetricCard.jsx`
+
+### Batch 4 — Pages (one at a time, as you prefer)
+Dashboard → Inventory → POS (and its `pos/*` children) → Customers → Suppliers → Services → Employees → Expenses → Returns → Reports → InsightDetail.
+
+### Deferred until needed
+- `src/context/AppDataContext.jsx` — I'll read it when a page's logic depends on it, so I don't break how data flows.
+- `src/data/*.js` — I'll only open these if a page's rendering depends on shape (e.g. I need to know what fields `products` have). Otherwise I'll leave them untouched.
+
+---
+
+### Why this order matters
+- `tailwind.config.js` + `index.css` define the **design memory** I'll lock in: primary, surface, border, muted, status colors, radius scale, spacing rhythm, type scale.
+- `ui.jsx` is almost certainly where the AI-slop concentrates — a grab-bag of rounded cards, gradient buttons, pill badges, and `shadow-lg` on everything. Fixing that file alone will visibly clean up every page.
+- Sidebar/Header/PageHeader establish the app's **shell personality**. If these are generic, the whole product feels template-y regardless of what the pages do.
+- Only after those are consistent do page-level redesigns make sense.
+
+---
+
+### Two quick questions (answer briefly)
+1. **Stack confirmation** — React + Vite + Tailwind, and is this using **shadcn/ui** or a custom `ui.jsx`? Any other UI libs in `package.json` I should know about (Radix, Headless UI, lucide-react, framer-motion, recharts, etc.)?
+2. **Product domain** — this looks like a **bike shop / service + retail POS + inventory management** app. Confirm, and tell me in one line what the *primary daily workflow* is (e.g. "cashier rings up sales in POS, owner checks dashboard/reports weekly"). That changes how I prioritize density vs. breathing room.
+
+Once you send **Batch 1**, I'll return the complete updated files for each, with the design system locked in and the AI-slop removed — not just theory.
+
+**Send `tailwind.config.js`, `src/index.css`, `src/lib/utils.js`, and `src/components/ui.jsx` next.**

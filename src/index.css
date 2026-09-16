@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Exposed as plain CSS vars so they can be referenced outside Tailwind too. */
+    --hm-border: #e7e5e4;
+    --hm-border-strong: #d6d3d1;
+    --hm-text: #0f172a;
+    --hm-primary: #0f172a;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-hm-bg text-hm-text font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-variant-numeric: proportional-nums;
+  }
+
+  /* Default border color for everything. Plain CSS — not @apply. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--hm-border);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  /* Single visible focus treatment. Not a soft halo. */
+  :focus-visible {
+    outline: 2px solid var(--hm-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  ::selection {
+    background: #1e293b;
+    color: #ffffff;
+  }
+
+  .tnum,
+  table td.tnum,
+  table th.tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+@layer components {
+  /* ---------- Surfaces ---------------------------------------------------- */
+
+  .panel {
+    @apply rounded-hm-lg border border-hm-border bg-hm-surface;
+  }
+
+  .panel-header {
+    @apply flex items-center justify-between gap-4 border-b border-hm-border px-4 py-3;
+  }
+
+  .panel-body {
+    @apply p-4;
+  }
+
+  /* ---------- Buttons ----------------------------------------------------- */
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap
+           rounded-hm-sm px-3.5 py-2 text-hm-body font-medium
+           transition-colors duration-100
+           disabled:pointer-events-none;
+  }
+
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-hm-meta;
+  }
+
+  .btn-primary {
+    @apply btn bg-hm-primary text-hm-primary-fg hover:bg-hm-primary-hover;
+  }
+
+  .btn-secondary {
+    @apply btn border border-hm-border bg-hm-surface text-hm-text
+           hover:bg-hm-surface-2 hover:border-hm-border-strong;
+  }
+
+  .btn-ghost {
+    @apply btn text-hm-text-muted hover:bg-hm-surface-2 hover:text-hm-text;
+  }
+
+  .btn-accent {
+    @apply btn bg-hm-accent text-white hover:bg-hm-accent-hover;
+  }
+
+  .btn-danger {
+    @apply btn bg-hm-danger text-white hover:brightness-95;
+  }
+
+  /* ---------- Inputs ------------------------------------------------------ */
+
+  .input {
+    @apply block w-full rounded-hm-md border border-hm-border bg-hm-surface
+           px-3 py-2 text-hm-body text-hm-text
+           placeholder:text-hm-text-subtle
+           focus:border-hm-primary focus:outline-none
+           focus:ring-2 focus:ring-hm-primary/15
+           disabled:bg-hm-surface-2;
+  }
+
+  .input-sm {
+    @apply px-2.5 py-1.5 text-hm-meta;
+  }
+
+  .label {
+    @apply block text-hm-meta font-medium text-hm-text-muted mb-1.5;
+  }
+
+  .hint {
+    @apply mt-1 text-hm-meta text-hm-text-subtle;
+  }
+
+  .error-text {
+    @apply mt-1 text-hm-meta text-hm-danger;
+  }
+
+  /* ---------- Status ------------------------------------------------------ */
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-hm-xs
+           px-1.5 py-0.5 text-hm-meta font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-hm-success-soft text-hm-success;
+  }
+  .badge-warning {
+    @apply badge bg-hm-warning-soft text-hm-warning;
+  }
+  .badge-danger {
+    @apply badge bg-hm-danger-soft  text-hm-danger;
+  }
+  .badge-info {
+    @apply badge bg-hm-info-soft    text-hm-info;
+  }
+  .badge-neutral {
+    @apply badge bg-hm-surface-2    text-hm-text-muted;
+  }
+
+  .dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full;
+  }
+
+  /* ---------- Typography helpers ----------------------------------------- */
+
+  .eyebrow {
+    @apply text-hm-meta font-medium text-hm-text-subtle;
+  }
+
+  .page-title {
+    @apply text-hm-page text-hm-text;
+  }
+
+  .page-desc {
+    @apply text-hm-body text-hm-text-muted;
+  }
+
+  /* ---------- Tables ------------------------------------------------------ */
+
+  .table-wrap {
+    @apply overflow-hidden rounded-hm-lg border border-hm-border bg-hm-surface;
+  }
+
+  .table {
+    @apply w-full border-collapse text-hm-body;
+  }
+
+  .table-head {
+    @apply bg-hm-surface-2 text-hm-meta font-medium text-hm-text-muted;
+  }
+
+  .table-head th {
+    @apply px-3 py-2 text-left font-medium;
+  }
+
+  .table tbody tr {
+    @apply border-t border-hm-border transition-colors;
+  }
+
+  .table tbody tr:hover {
+    @apply bg-hm-surface-2;
+  }
+
+  .table td {
+    @apply px-3 py-2.5 align-middle;
+  }
+
+  /* ---------- Divider ----------------------------------------------------- */
+
+  .divider {
+    @apply h-px w-full bg-hm-border;
+  }
+}
+
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
+.receipt-print {
+  display: none;
+}
+
+@media print {
+  .no-print,
+  aside,
+  header,
+  button {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .panel,
+  .table-wrap {
+    box-shadow: none !important;
+    border-color: #ddd !important;
+  }
+
+  body.receipt-mode * {
+    visibility: hidden !important;
+  }
+
+  body.receipt-mode .receipt-print,
+  body.receipt-mode .receipt-print * {
+    visibility: visible !important;
+  }
+
+  body.receipt-mode .receipt-print {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    padding: 4mm;
+    background: #fff;
+    color: #000;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .receipt-brand {
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .receipt-muted {
+    text-align: center;
+    color: #555;
+  }
+  .receipt-line {
+    border-top: 1px dashed #777;
+    margin: 7px 0;
+  }
+  .receipt-item,
+  .receipt-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .receipt-total {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}

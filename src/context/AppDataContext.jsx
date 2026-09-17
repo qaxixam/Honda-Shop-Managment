@@ -21,6 +21,7 @@ const initial = {
   services: clone(seedServices),
   customers: clone(seedCustomers),
   sales: clone(seedSales),
+  billDrafts: [],
   returns: [],
   expenses: clone(seedExpenses),
   suppliers: clone(seedSuppliers).map((s) => ({
@@ -400,6 +401,23 @@ export function AppDataProvider({ children }) {
       deleteSupplier,
       paySupplier,
       recordSupplierPurchase,
+      upsertBillDraft: (draft) =>
+        updateCollection("billDrafts", (items) => {
+          const normalized = {
+            ...draft,
+            updatedAt: draft.updatedAt || new Date().toISOString(),
+          };
+          const exists = items.some((item) => item.id === normalized.id);
+          return exists
+            ? items.map((item) =>
+                item.id === normalized.id ? { ...item, ...normalized } : item,
+              )
+            : [normalized, ...items];
+        }),
+      removeBillDraft: (id) =>
+        updateCollection("billDrafts", (items) =>
+          items.filter((item) => item.id !== id),
+        ),
       addEmployee: employee.add,
       updateEmployee: employee.update,
       deleteEmployee: employee.remove,

@@ -6,7 +6,13 @@ import { Button, Modal, IconButton, Input, Panel } from "../components/ui";
 import FormField from "../components/FormField";
 import { useAppData } from "../context/AppDataContext";
 
-const blank = { name: "", charges: "", time: "", category: "Maintenance" };
+const blank = {
+  name: "",
+  charges: "",
+  cost: "",
+  time: "",
+  category: "Maintenance",
+};
 function nextServiceId(services) {
   const max = services.reduce((m, s) => {
     const n = parseInt(String(s.id || "").replace("HBS-", ""), 10);
@@ -35,14 +41,19 @@ export default function Services() {
   const avgCharge = services.length
     ? services.reduce((a, s) => a + Number(s.charges || 0), 0) / services.length
     : 0;
-  const categories = new Set(services.map((s) => s.category)).size;
-
+  const avgProfit = services.length
+    ? services.reduce(
+        (a, s) => a + (Number(s.charges || 0) - Number(s.cost || 0)),
+        0,
+      ) / services.length
+    : 0;
   function save() {
     if (!form.name.trim()) return;
     const item = {
       ...form,
       id: editing?.id || nextServiceId(services),
       charges: Number(form.charges),
+      cost: Number(form.cost || 0),
       time: Number(form.time),
     };
     editing ? updateService(editing.id, item) : addService(item);
@@ -78,7 +89,7 @@ export default function Services() {
         <div className="grid grid-cols-3 divide-x divide-hm-border">
           <Stat label="Services" value={services.length} />
           <Stat label="Average charge" value={money(avgCharge)} />
-          <Stat label="Categories" value={categories} />
+          <Stat label="Average profit" value={money(avgProfit)} />
         </div>
       </section>
 
@@ -103,6 +114,8 @@ export default function Services() {
                 <th className="px-4">Service</th>
                 <th className="px-4">Category</th>
                 <th className="px-4 text-right">Charge</th>
+                <th className="px-4 text-right">Cost</th>
+                <th className="px-4 text-right">Profit</th>
                 <th className="px-4 text-right">Time</th>
                 <th className="px-4 text-right">Actions</th>
               </tr>
@@ -121,6 +134,12 @@ export default function Services() {
                   </td>
                   <td className="px-4 text-right tabular-nums font-medium">
                     {money(s.charges)}
+                  </td>
+                  <td className="px-4 text-right tabular-nums text-hm-text-muted">
+                    {money(s.cost || 0)}
+                  </td>
+                  <td className="px-4 text-right tabular-nums font-medium text-hm-success">
+                    {money(Number(s.charges || 0) - Number(s.cost || 0))}
                   </td>
                   <td className="px-4 text-right tabular-nums text-hm-text-muted">
                     {s.time} min
@@ -217,6 +236,19 @@ export default function Services() {
                 min="0"
                 value={form.charges}
                 onChange={(e) => setForm({ ...form, charges: e.target.value })}
+              />
+            </FormField>
+            <FormField
+              label="Service cost"
+              htmlFor="svc-cost"
+              hint="Labour/material cost"
+            >
+              <Input
+                id="svc-cost"
+                type="number"
+                min="0"
+                value={form.cost}
+                onChange={(e) => setForm({ ...form, cost: e.target.value })}
               />
             </FormField>
           </div>

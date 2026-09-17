@@ -13,6 +13,7 @@ import {
   Bike,
   UserCog,
   RotateCcw,
+  History,
 } from "lucide-react";
 
 const groups = [
@@ -21,6 +22,7 @@ const groups = [
     items: [
       ["Dashboard", "/", LayoutDashboard],
       ["Point of Sale", "/pos", ShoppingCart],
+      ["Bill History", "/history", History],
       ["Returns", "/returns", RotateCcw],
     ],
   },

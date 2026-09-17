@@ -2,6 +2,7 @@ import React from "react";
 import { AlertTriangle, Plus, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { money, todayISO } from "../lib/utils";
+import { saleMetrics } from "../lib/billing";
 import PageHeader from "../components/PageHeader";
 import { Button, Panel } from "../components/ui";
 import { useAppData } from "../context/AppDataContext";
@@ -65,12 +66,20 @@ export default function Dashboard() {
         .reduce((a, i) => a + Number(i.price || 0) * Number(i.qty || 0), 0),
     0,
   );
+  const productProfit = sales.reduce(
+    (sum, s) => sum + saleMetrics(s).productProfit,
+    0,
+  );
   const serviceSales = sales.reduce(
     (sum, s) =>
       sum +
       (s.lineItems || [])
         .filter((i) => i.type === "service")
         .reduce((a, i) => a + Number(i.price || 0) * Number(i.qty || 0), 0),
+    0,
+  );
+  const serviceProfit = sales.reduce(
+    (sum, s) => sum + saleMetrics(s).serviceProfit,
     0,
   );
   const discountsGiven = sales.reduce(
@@ -177,14 +186,14 @@ export default function Dashboard() {
     {
       label: "Product sales",
       value: money(productSales),
-      hint: "Spare parts",
+      hint: `Profit ${money(productProfit)}`,
       to: "/insights/product-sales",
       tone: "info",
     },
     {
       label: "Service revenue",
       value: money(serviceSales),
-      hint: "Workshop labour",
+      hint: `Profit ${money(serviceProfit)}`,
       to: "/insights/service-sales",
       tone: "info",
     },

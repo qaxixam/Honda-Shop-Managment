@@ -17,6 +17,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import { money, date } from "../lib/utils";
+import { lineCost } from "../lib/billing";
 import { Button, Panel, Status } from "../components/ui";
 import { useAppData } from "../context/AppDataContext";
 
@@ -629,21 +630,25 @@ function ServiceSales({ sales }) {
     (s.lineItems || [])
       .filter((i) => i.type === "service")
       .forEach((i) => {
-        rows[i.id] ??= { name: i.name, qty: 0, revenue: 0 };
+        rows[i.id] ??= { name: i.name, qty: 0, revenue: 0, cost: 0 };
         rows[i.id].qty += Number(i.qty || 0);
         rows[i.id].revenue += Number(i.price || 0) * Number(i.qty || 0);
+        rows[i.id].cost += lineCost(i);
       }),
   );
 
   return (
     <Panel bodyClassName="p-0">
       <div className="overflow-x-auto">
-        <table className="table min-w-[560px]">
+        <table className="table min-w-[760px]">
           <thead className="table-head">
             <tr>
               <th className="px-4">Service</th>
               <th className="px-4 text-right">Times performed</th>
               <th className="px-4 text-right">Revenue</th>
+              <th className="px-4 text-right">Cost</th>
+              <th className="px-4 text-right">Profit</th>
+              <th className="px-4 text-right">Margin</th>
             </tr>
           </thead>
           <tbody>
@@ -657,6 +662,17 @@ function ServiceSales({ sales }) {
                   </td>
                   <td className="px-4 text-right tabular-nums font-medium">
                     {money(r.revenue)}
+                  </td>
+                  <td className="px-4 text-right tabular-nums text-hm-text-muted">
+                    {money(r.cost)}
+                  </td>
+                  <td className="px-4 text-right tabular-nums font-medium">
+                    {money(r.revenue - r.cost)}
+                  </td>
+                  <td className="px-4 text-right tabular-nums text-hm-text-muted">
+                    {r.revenue
+                      ? `${Math.round(((r.revenue - r.cost) / r.revenue) * 100)}%`
+                      : "—"}
                   </td>
                 </tr>
               ))}

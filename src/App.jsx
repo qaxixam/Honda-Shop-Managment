@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Dashboard from "./pages/Dashboard";
 import POS from "./pages/POS";
+import BillHistory from "./pages/BillHistory";
 import Inventory from "./pages/Inventory";
 import Services from "./pages/Services";
 import Customers from "./pages/Customers";
@@ -35,6 +36,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/pos" element={<POS />} />
+                <Route path="/history" element={<BillHistory />} />
                 <Route path="/returns" element={<Returns />} />
                 <Route path="/inventory" element={<Inventory />} />
                 <Route path="/services" element={<Services />} />

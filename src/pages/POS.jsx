@@ -1,11 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { UserPlus, CheckCircle2, Package, Wrench } from "lucide-react";
+import {
+  UserPlus,
+  CheckCircle2,
+  Package,
+  Wrench,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import { Button, Modal, useToast } from "../components/ui";
 import FormField from "../components/FormField";
 import { useAppData } from "../context/AppDataContext";
 import { money, todayISO } from "../lib/utils";
 import { findStockIssue, productQuantityInCart } from "../lib/inventory";
+import { billMetrics } from "../lib/billing";
 import AddProductModal from "../components/AddProductModal";
 import AddServiceModal from "../components/AddServiceModal";
 import CartPanel from "../components/pos/CartPanel";
@@ -14,8 +22,15 @@ import PaymentSummary from "../components/pos/PaymentSummary";
 import ReceiptPrint from "../components/pos/ReceiptPrint";
 
 export default function POS() {
-  const { products, services, customers, addCustomer, completeSale } =
-    useAppData();
+  const {
+    products,
+    services,
+    customers,
+    addCustomer,
+    completeSale,
+    upsertBillDraft,
+    removeBillDraft,
+  } = useAppData();
   const { showToast } = useToast();
 
   const [customerId, setCustomerId] = useState("");
@@ -36,6 +51,8 @@ export default function POS() {
   });
   const [savedSale, setSavedSale] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [showEarnings, setShowEarnings] = useState(false);
+  const [draftId, setDraftId] = useState(() => `DRAFT-${Date.now()}`);
 
   useEffect(() => {
     const clean = () => document.body.classList.remove("receipt-mode");
@@ -72,6 +89,51 @@ export default function POS() {
   const total = Math.max(0, subtotal - discountAmount);
   const safePaid = Math.min(Math.max(0, Number(paid) || 0), total);
   const due = Math.max(0, total - safePaid);
+  const earnings = useMemo(
+    () => billMetrics(cart, discountAmount),
+    [cart, discountAmount],
+  );
+
+  useEffect(() => {
+    if (!cart.length) {
+      removeBillDraft(draftId);
+      return;
+    }
+
+    upsertBillDraft({
+      id: draftId,
+      customer: customer?.name || "Walk-in Customer",
+      customerId: customerId || null,
+      date: todayISO(),
+      subtotal,
+      discountType,
+      discountValue: Number(discountValue) || 0,
+      discountAmount,
+      total,
+      paid: safePaid,
+      due,
+      method,
+      status: due > 0 ? "Partial" : "Unpaid",
+      items: cart.map((item) => item.name),
+      lineItems: cart,
+      profit: earnings.netProfit,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [
+    cart,
+    customerId,
+    customer?.name,
+    discountAmount,
+    discountType,
+    discountValue,
+    draftId,
+    due,
+    earnings.netProfit,
+    method,
+    safePaid,
+    subtotal,
+    total,
+  ]);
 
   // Auto-fill received amount with the running total until the cashier
   // manually edits the field.
@@ -114,7 +176,9 @@ export default function POS() {
           name: item.name,
           price,
           qty: 1,
-          purchasePrice: Number(item.purchasePrice || 0),
+          purchasePrice: Number(
+            type === "service" ? item.cost || 0 : item.purchasePrice || 0,
+          ),
         },
       ];
     });
@@ -178,6 +242,7 @@ export default function POS() {
       showToast("Stock changed before the sale could be saved.", "danger");
       return;
     }
+    removeBillDraft(draftId);
     const sale = {
       id,
       customer: customer?.name || "Walk-in Customer",
@@ -207,6 +272,7 @@ export default function POS() {
     setMethod("Cash");
     setDiscountType("none");
     setDiscountValue("");
+    setDraftId(`DRAFT-${Date.now()}`);
   }
 
   return (
@@ -292,6 +358,12 @@ export default function POS() {
             disabled={!cart.length}
             onSave={() => saveSale(false)}
             onPrint={() => saveSale(true)}
+          />
+
+          <EarningsPanel
+            earnings={earnings}
+            show={showEarnings}
+            onToggle={() => setShowEarnings((value) => !value)}
           />
         </aside>
       </div>
@@ -421,6 +493,64 @@ export default function POS() {
       </div>
 
       <ReceiptPrint sale={savedSale} />
+    </div>
+  );
+}
+
+function EarningsPanel({ earnings, show, onToggle }) {
+  return (
+    <section className="panel overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between border-b border-hm-border px-4 py-3 text-left"
+      >
+        <div>
+          <h2 className="text-hm-title text-hm-text">Bill earnings</h2>
+          <p className="mt-0.5 text-hm-meta text-hm-text-subtle">
+            Hide this before showing the customer.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 text-hm-meta font-medium text-hm-text-muted">
+          {show ? <EyeOff size={14} /> : <Eye size={14} />}
+          {show ? "Hide" : "Show"}
+        </span>
+      </button>
+
+      {show && (
+        <div className="space-y-2 p-4">
+          <EarnRow label="Product profit" value={earnings.productProfit} />
+          <EarnRow label="Service profit" value={earnings.serviceProfit} />
+          <EarnRow label="Before discount" value={earnings.grossProfit} />
+          <EarnRow
+            label="After discount"
+            value={earnings.netProfit}
+            emphasis
+            tone={earnings.netProfit < 0 ? "danger" : "success"}
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function EarnRow({ label, value, emphasis = false, tone = "default" }) {
+  const color =
+    tone === "danger"
+      ? "text-hm-danger"
+      : tone === "success"
+        ? "text-hm-success"
+        : "text-hm-text";
+  return (
+    <div className="flex items-baseline justify-between gap-3 text-hm-body">
+      <span className="text-hm-text-muted">{label}</span>
+      <span
+        className={`tabular-nums ${color} ${
+          emphasis ? "font-semibold" : "font-medium"
+        }`}
+      >
+        {money(value)}
+      </span>
     </div>
   );
 }

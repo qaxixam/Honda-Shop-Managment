@@ -40,6 +40,10 @@ export function AppDataProvider({ children }) {
 
   useEffect(() => {
     try {
+      console.log("checking the data");
+
+      console.log(data.products);
+
       localStorage.removeItem(KEY);
       localStorage.removeItem("hbms_store_v3");
       localStorage.removeItem("hbms_store_v2");

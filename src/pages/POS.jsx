@@ -64,7 +64,7 @@ export default function POS() {
     document.body.classList.add("receipt-mode");
     setTimeout(() => window.print(), 50);
   };
-  // Stale customer reference clear karo
+
   useEffect(() => {
     if (customerId && !customers.find((c) => c.id === customerId)) {
       setCustomerId("");
@@ -135,8 +135,6 @@ export default function POS() {
     total,
   ]);
 
-  // Auto-fill received amount with the running total until the cashier
-  // manually edits the field.
   useEffect(() => {
     if (!paidTouched && total > 0) {
       setPaid(String(total));
@@ -259,6 +257,14 @@ export default function POS() {
     };
     setSavedSale(sale);
     setSuccess(true);
+    setCart([]);
+    setPaid("");
+    setPaidTouched(false);
+    setCustomerId("");
+    setMethod("Cash");
+    setDiscountType("none");
+    setDiscountValue("");
+    setDraftId(`DRAFT-${Date.now()}`);
     if (shouldPrint) printReceipt();
   }
 
@@ -277,10 +283,14 @@ export default function POS() {
 
   return (
     <div>
-      <PageHeader
-        title="Billing"
-        subtitle="Ring up items, take payment, print a receipt."
-      />
+      {/* ✅ Bill profit bar — upar, poore width mein */}
+      <div className="mb-4">
+        <EarningsPanel
+          earnings={earnings}
+          show={showEarnings}
+          onToggle={() => setShowEarnings((value) => !value)}
+        />
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_400px]">
         {/* LEFT: buttons + bill */}
@@ -321,7 +331,6 @@ export default function POS() {
             </button>
           </div>
 
-          {/* Bill sits directly under the buttons on the left */}
           <CartPanel
             cart={cart}
             products={products}
@@ -358,12 +367,6 @@ export default function POS() {
             disabled={!cart.length}
             onSave={() => saveSale(false)}
             onPrint={() => saveSale(true)}
-          />
-
-          <EarningsPanel
-            earnings={earnings}
-            show={showEarnings}
-            onToggle={() => setShowEarnings((value) => !value)}
           />
         </aside>
       </div>
@@ -497,44 +500,57 @@ export default function POS() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Bill profit bar — Easypaisa/JazzCash style hide/unhide              */
+/* ------------------------------------------------------------------ */
+
 function EarningsPanel({ earnings, show, onToggle }) {
   return (
     <section className="panel overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center justify-between border-b border-hm-border px-4 py-3 text-left"
-      >
-        <div>
-          <h2 className="text-hm-title text-hm-text">Bill earnings</h2>
-          <p className="mt-0.5 text-hm-meta text-hm-text-subtle">
-            Hide this before showing the customer.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+        {/* Left: label + toggle */}
+        <div className="flex items-center gap-3">
+          <h2 className="text-hm-body font-medium text-hm-text">Bill profit</h2>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="inline-flex items-center gap-1.5 rounded-hm-sm border border-hm-border px-2 py-1 text-hm-meta font-medium text-hm-text-muted transition-colors hover:bg-hm-surface-2 hover:text-hm-text"
+            aria-label={show ? "Hide profit" : "Show profit"}
+          >
+            {show ? <EyeOff size={13} /> : <Eye size={13} />}
+            {show ? "Hide" : "Show"}
+          </button>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-hm-meta font-medium text-hm-text-muted">
-          {show ? <EyeOff size={14} /> : <Eye size={14} />}
-          {show ? "Hide" : "Show"}
-        </span>
-      </button>
 
-      {show && (
-        <div className="space-y-2 p-4">
-          <EarnRow label="Product profit" value={earnings.productProfit} />
-          <EarnRow label="Service profit" value={earnings.serviceProfit} />
-          <EarnRow label="Before discount" value={earnings.grossProfit} />
-          <EarnRow
-            label="After discount"
-            value={earnings.netProfit}
-            emphasis
-            tone={earnings.netProfit < 0 ? "danger" : "success"}
-          />
+        {/* Right: figures ya dots */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+          {show ? (
+            <>
+              <Figure label="Product" value={earnings.productProfit} />
+              <Figure label="Service" value={earnings.serviceProfit} />
+              <Figure label="Before discount" value={earnings.grossProfit} />
+              <Figure
+                label="Net profit"
+                value={earnings.netProfit}
+                emphasis
+                tone={earnings.netProfit < 0 ? "danger" : "success"}
+              />
+            </>
+          ) : (
+            <span
+              className="select-none text-hm-body tracking-[0.2em] text-hm-text-subtle"
+              aria-hidden="true"
+            >
+              ••••••
+            </span>
+          )}
         </div>
-      )}
+      </div>
     </section>
   );
 }
 
-function EarnRow({ label, value, emphasis = false, tone = "default" }) {
+function Figure({ label, value, emphasis = false, tone = "default" }) {
   const color =
     tone === "danger"
       ? "text-hm-danger"
@@ -542,11 +558,11 @@ function EarnRow({ label, value, emphasis = false, tone = "default" }) {
         ? "text-hm-success"
         : "text-hm-text";
   return (
-    <div className="flex items-baseline justify-between gap-3 text-hm-body">
-      <span className="text-hm-text-muted">{label}</span>
+    <div className="flex items-baseline gap-1.5">
+      <span className="text-hm-meta text-hm-text-subtle">{label}</span>
       <span
         className={`tabular-nums ${color} ${
-          emphasis ? "font-semibold" : "font-medium"
+          emphasis ? "text-hm-body font-semibold" : "text-hm-body font-medium"
         }`}
       >
         {money(value)}
@@ -554,6 +570,10 @@ function EarnRow({ label, value, emphasis = false, tone = "default" }) {
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Customer picker (unchanged)                                         */
+/* ------------------------------------------------------------------ */
 
 function CustomerSearchList({ customers, onSelect }) {
   const [q, setQ] = useState("");

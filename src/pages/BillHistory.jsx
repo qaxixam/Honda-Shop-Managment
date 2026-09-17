@@ -98,6 +98,7 @@ export default function BillHistory() {
             <option>Paid</option>
             <option>Partial</option>
             <option>Unpaid</option>
+            <option>Draft</option>
           </Select>
           <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
             <option>All</option>
@@ -176,7 +177,9 @@ export default function BillHistory() {
                       )}
                     </div>
                     <div className="mt-0.5">
-                      <Status tone={row.kind === "Saved" ? "success" : "warning"}>
+                      <Status
+                        tone={row.kind === "Saved" ? "success" : "warning"}
+                      >
                         {row.kind}
                       </Status>
                     </div>
@@ -236,10 +239,13 @@ function matchesSearch(row, query) {
 
 function matchesStatus(row, selected) {
   if (selected === "All") return true;
+  if (selected === "Draft") return row.kind === "Unsaved";
+  if (row.kind === "Unsaved") return false;
   return paymentLabel(row) === selected;
 }
 
 function paymentLabel(row) {
+  if (row.kind === "Unsaved") return "Draft";
   if (Number(row.total || 0) <= 0) return "Unpaid";
   if (Number(row.due || 0) <= 0 && Number(row.paid || 0) > 0) return "Paid";
   if (Number(row.paid || 0) > 0) return "Partial";
@@ -247,6 +253,7 @@ function paymentLabel(row) {
 }
 
 function statusTone(row) {
+  if (row.kind === "Unsaved") return "warning";
   const label = paymentLabel(row);
   if (label === "Paid") return "success";
   if (label === "Partial") return "warning";

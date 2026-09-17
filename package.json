@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test",
+    "check": "npm run test && npm run build",
     "preview": "vite preview",
     "dev:electron": "concurrently -k \"npm:dev\" \"npm:electron:wait\"",
     "electron:wait": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",

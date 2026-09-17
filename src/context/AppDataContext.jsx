@@ -10,6 +10,8 @@ import {
   employees as seedEmployees,
   advances as seedAdvances,
 } from "../data";
+import { findStockIssue } from "../lib/inventory";
+import { todayISO } from "../lib/utils";
 
 const KEY = "hbms_store_v4";
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -33,32 +35,17 @@ const initial = {
 const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
-  const [data, setData] = useState(() => {
-    try {
-      const saved =
-        localStorage.getItem(KEY) ||
-        localStorage.getItem("hbms_store_v3") ||
-        localStorage.getItem("hbms_store_v2");
-      if (!saved) return initial;
-      const parsed = JSON.parse(saved);
-      return {
-        ...initial,
-        ...parsed,
-        returns: parsed.returns || [],
-        suppliers: (parsed.suppliers || initial.suppliers).map((s) => ({
-          ...s,
-          purchases: s.purchases || [],
-          payments: s.payments || [],
-        })),
-        employees: parsed.employees || initial.employees,
-        advances: parsed.advances || [],
-      };
-    } catch {
-      return initial;
-    }
-  });
+  const [data, setData] = useState(() => clone(initial));
 
-  useEffect(() => localStorage.setItem(KEY, JSON.stringify(data)), [data]);
+  useEffect(() => {
+    try {
+      localStorage.removeItem(KEY);
+      localStorage.removeItem("hbms_store_v3");
+      localStorage.removeItem("hbms_store_v2");
+    } catch {
+      // Browser storage can be unavailable in restricted desktop/webview modes.
+    }
+  }, []);
 
   const updateCollection = (key, updater) =>
     setData((prev) => ({
@@ -94,7 +81,15 @@ export function AppDataProvider({ children }) {
     ]);
   const updateExpense = (id, patch) =>
     updateCollection("expenses", (items) =>
-      items.map((x) => (x.id === id ? { ...x, ...patch } : x)),
+      items.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              ...patch,
+              date: String(patch.date || x.date || "").slice(0, 10),
+            }
+          : x,
+      ),
     );
   const deleteExpense = (id) =>
     updateCollection("expenses", (items) => items.filter((x) => x.id !== id));
@@ -129,7 +124,7 @@ export function AppDataProvider({ children }) {
         if (!applied) return s;
         const payment = {
           id: `PAY-${Date.now()}`,
-          date: new Date().toISOString().slice(0, 10),
+          date: todayISO(),
           amount: applied,
           note: (note || "").trim(),
         };
@@ -184,7 +179,7 @@ export function AppDataProvider({ children }) {
     if (!item || !supplier || !total) return false;
     const purchase = {
       id: `PUR-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
+      date: todayISO(),
       productId,
       productName: item.name,
       qty: quantity,
@@ -230,6 +225,9 @@ export function AppDataProvider({ children }) {
     paid,
     method,
   }) => {
+    const stockIssue = findStockIssue(items, data.products);
+    if (stockIssue) return false;
+
     const safeSubtotal = Math.max(0, Number(subtotal) || 0);
     const safeDiscount = Math.min(
       safeSubtotal,
@@ -248,7 +246,7 @@ export function AppDataProvider({ children }) {
       id: invoiceNo,
       customer: customer?.name || "Walk-in Customer",
       customerId: customerId || null,
-      date: new Date().toISOString().slice(0, 10),
+      date: todayISO(),
       subtotal: safeSubtotal,
       discountType,
       discountValue: Number(discountValue) || 0,
@@ -311,7 +309,7 @@ export function AppDataProvider({ children }) {
       saleId,
       customerId: sale.customerId || null,
       customer: sale.customer || "Walk-in Customer",
-      date: new Date().toISOString().slice(0, 10),
+      date: todayISO(),
       amount: safeRefund,
       method,
       reason,
@@ -370,10 +368,7 @@ export function AppDataProvider({ children }) {
       id,
       employeeId: advance.employeeId,
       amount: Math.max(0, Number(advance.amount) || 0),
-      date: String(advance.date || new Date().toISOString().slice(0, 10)).slice(
-        0,
-        10,
-      ),
+      date: String(advance.date || todayISO()).slice(0, 10),
       note: (advance.note || "").trim(),
     };
     updateCollection("advances", (items) => [record, ...items]);

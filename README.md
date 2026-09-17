@@ -13,10 +13,16 @@ Offline-first Honda Bike Shop Management System frontend. No backend required.
 - Supplier purchases update stock and supplier payable automatically; supplier payments can be recorded later.
 - Expenses support custom names plus edit/delete.
 - Employee management tracks salary, advance and remaining salary.
-- All data is persisted in browser localStorage.
+- Current web builds start from the seed data in `src/data`.
+- Desktop persistence is intentionally left for the future Electron/database build.
 
 ## Run
 ```bash
 npm install
 npm run dev
+```
+
+## Verify
+```bash
+npm run check
 ```

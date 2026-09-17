@@ -13,12 +13,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import { Button, Modal, IconButton, Input, Panel } from "../components/ui";
 import FormField from "../components/FormField";
-import { money, date } from "../lib/utils";
+import { money, date, todayISO } from "../lib/utils";
 import { useAppData } from "../context/AppDataContext";
 
 const makeAdvanceBlank = () => ({
   amount: "",
-  date: new Date().toISOString().slice(0, 10),
+  date: todayISO(),
   note: "",
 });
 
@@ -78,7 +78,7 @@ export default function EmployeeDetail() {
     addAdvance({
       employeeId: employee.id,
       amount: Number(form.amount),
-      date: form.date || new Date().toISOString().slice(0, 10),
+      date: form.date || todayISO(),
       note: form.note,
     });
     close();

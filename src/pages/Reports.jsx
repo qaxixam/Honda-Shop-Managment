@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Download, Printer, FileText, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
-import { money, date } from "../lib/utils";
+import { money, date, todayISO } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
 import { Button, Panel } from "../components/ui";
 import { useAppData } from "../context/AppDataContext";
@@ -17,11 +17,7 @@ export default function Reports() {
   const { sales, expenses, returns } = useAppData();
   const [period, setPeriod] = useState("daily");
 
-  const dates = [...sales, ...expenses, ...(returns || [])]
-    .map((x) => x.date)
-    .filter(Boolean)
-    .sort();
-  const anchor = dates.at(-1) || new Date().toISOString().slice(0, 10);
+  const anchor = todayISO();
 
   const filtered = useMemo(
     () => filterPeriod({ sales, expenses, returns }, period, anchor),

@@ -18,7 +18,6 @@ import { ToastProvider } from "./components/ui";
 import CustomerDetail from "./pages/CustomerDetail";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import SupplierDetail from "./pages/SupplierDetail";
-import Example from "./components/Example";
 
 export default function App() {
   const [open, setOpen] = useState(false);

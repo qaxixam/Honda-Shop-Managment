@@ -22,12 +22,10 @@ import { useAppData } from "../context/AppDataContext";
 
 export default function InsightDetail() {
   const { type, id } = useParams();
-  console.log(id);
 
   const navigate = useNavigate();
   const { sales, customers, suppliers, products, expenses, returns } =
     useAppData();
-  console.log(sales);
 
   /* ---------------- Invoice view (route: /insights/invoice/:id) ------------- */
   if (type === "invoice") {
@@ -568,9 +566,7 @@ function ProductSales({ sales, products }) {
         0,
       );
       const cost = lines.reduce(
-        (a, i) =>
-          a +
-          Number(i.purchasePrice || p.purchasePrice || 0) * Number(i.qty || 0),
+        (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
         0,
       );
       return { ...p, qty, revenue, cost, profit: revenue - cost };

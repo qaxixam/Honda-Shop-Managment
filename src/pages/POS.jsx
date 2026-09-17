@@ -4,7 +4,8 @@ import PageHeader from "../components/PageHeader";
 import { Button, Modal, useToast } from "../components/ui";
 import FormField from "../components/FormField";
 import { useAppData } from "../context/AppDataContext";
-import { money } from "../lib/utils";
+import { money, todayISO } from "../lib/utils";
+import { findStockIssue, productQuantityInCart } from "../lib/inventory";
 import AddProductModal from "../components/AddProductModal";
 import AddServiceModal from "../components/AddServiceModal";
 import CartPanel from "../components/pos/CartPanel";
@@ -93,10 +94,18 @@ export default function POS() {
     );
     setCart((current) => {
       const found = current.find((i) => i.id === item.id && i.type === type);
-      if (found)
+      if (found) {
+        if (
+          type === "product" &&
+          productQuantityInCart(current, item.id) >= Number(item.stock || 0)
+        ) {
+          showToast(`${item.name} has only ${item.stock} in stock.`, "warning");
+          return current;
+        }
         return current.map((i) =>
           i.id === item.id && i.type === type ? { ...i, qty: i.qty + 1 } : i,
         );
+      }
       return [
         ...current,
         {
@@ -143,6 +152,12 @@ export default function POS() {
   function saveSale(shouldPrint = false) {
     if (!cart.length) return;
 
+    const stockIssue = findStockIssue(cart, products);
+    if (stockIssue) {
+      showToast(stockIssue.message, "danger");
+      return;
+    }
+
     if (due > 0 && !customerId) {
       showToast("Attach a customer before saving a partial payment.", "danger");
       return;
@@ -159,10 +174,14 @@ export default function POS() {
       paid: safePaid,
       method,
     });
+    if (!id) {
+      showToast("Stock changed before the sale could be saved.", "danger");
+      return;
+    }
     const sale = {
       id,
       customer: customer?.name || "Walk-in Customer",
-      date: new Date().toISOString().slice(0, 10),
+      date: todayISO(),
       subtotal,
       discountType,
       discountValue: Number(discountValue) || 0,

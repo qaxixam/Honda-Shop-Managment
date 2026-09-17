@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Edit3, Trash2, WalletCards } from "lucide-react";
 import { useAppData } from "../context/AppDataContext";
-import { money, date } from "../lib/utils";
+import { money, date, todayISO } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
 import {
   Button,
@@ -33,7 +33,7 @@ export default function Expenses() {
       ? updateExpense(editing.id, item)
       : addExpense({
           id: `EXP-${Date.now()}`,
-          date: new Date().toISOString(),
+          date: todayISO(),
           ...item,
         });
     close();

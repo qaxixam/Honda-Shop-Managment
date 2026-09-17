@@ -1,7 +1,7 @@
 import React from "react";
 import { AlertTriangle, Plus, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { money } from "../lib/utils";
+import { money, todayISO } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
 import { Button, Panel } from "../components/ui";
 import { useAppData } from "../context/AppDataContext";
@@ -19,7 +19,7 @@ export default function Dashboard() {
     returns,
   } = useAppData();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   /* ----- overall figures ----- */
   const revenue = sales.reduce((a, s) => a + Number(s.total || 0), 0);

@@ -9,7 +9,7 @@ import {
   UserPlus,
   CreditCard,
 } from "lucide-react";
-import { money, date } from "../lib/utils";
+import { money, date, todayISO } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
 import { Button, Modal, IconButton, Input, Panel } from "../components/ui";
 import FormField from "../components/FormField";
@@ -63,7 +63,7 @@ export default function Customers() {
       visits: Number(editing?.visits || 0),
       spent: Number(editing?.spent || 0),
       due: Number(editing?.due || 0),
-      createdAt: editing?.createdAt || new Date().toISOString().slice(0, 10),
+      createdAt: editing?.createdAt || todayISO(),
     };
     editing ? updateCustomer(editing.id, item) : addCustomer(item);
     close();

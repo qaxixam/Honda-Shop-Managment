@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import { Button, Modal, IconButton, Input, Panel } from "../components/ui";
 import FormField from "../components/FormField";
-import { money, date } from "../lib/utils";
+import { money, date, todayISO } from "../lib/utils";
 import { useAppData } from "../context/AppDataContext";
 
 const blank = {
@@ -51,7 +51,7 @@ export default function Employees() {
       ? updateEmployee(editing.id, item)
       : addEmployee({
           id: nextEmployeeId(employees),
-          joined: new Date().toISOString().slice(0, 10),
+          joined: todayISO(),
           ...item,
         });
     close();

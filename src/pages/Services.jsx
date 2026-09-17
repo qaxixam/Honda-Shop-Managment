@@ -7,6 +7,13 @@ import FormField from "../components/FormField";
 import { useAppData } from "../context/AppDataContext";
 
 const blank = { name: "", charges: "", time: "", category: "Maintenance" };
+function nextServiceId(services) {
+  const max = services.reduce((m, s) => {
+    const n = parseInt(String(s.id || "").replace("HBS-", ""), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return `HBS-${String(max + 1).padStart(4, "0")}`;
+}
 
 export default function Services() {
   const { services, addService, updateService, deleteService } = useAppData();
@@ -34,7 +41,7 @@ export default function Services() {
     if (!form.name.trim()) return;
     const item = {
       ...form,
-      id: editing?.id || `HBS-${String(services.length + 1).padStart(4, "0")}`,
+      id: editing?.id || nextServiceId(services),
       charges: Number(form.charges),
       time: Number(form.time),
     };

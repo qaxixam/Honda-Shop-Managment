@@ -13,7 +13,13 @@ const blank = {
   phone: "",
   salary: "",
 };
-
+function nextEmployeeId(employees) {
+  const max = employees.reduce((m, e) => {
+    const n = parseInt(String(e.id || "").replace("EMP-", ""), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return `EMP-${String(max + 1).padStart(3, "0")}`;
+}
 export default function Employees() {
   const { employees, advances, addEmployee, updateEmployee, deleteEmployee } =
     useAppData();
@@ -44,7 +50,7 @@ export default function Employees() {
     editing
       ? updateEmployee(editing.id, item)
       : addEmployee({
-          id: `EMP-${String(employees.length + 1).padStart(3, "0")}`,
+          id: nextEmployeeId(employees),
           joined: new Date().toISOString().slice(0, 10),
           ...item,
         });

@@ -238,7 +238,11 @@ export function AppDataProvider({ children }) {
     const safeTotal = Math.max(0, Number(total) || safeSubtotal - safeDiscount);
     const safePaid = Math.min(Math.max(0, Number(paid) || 0), safeTotal);
     const due = Math.max(0, safeTotal - safePaid);
-    const invoiceNo = `INV-${1026 + data.sales.length - seedSales.length}`;
+    const maxInvoice = data.sales.reduce((m, s) => {
+      const n = parseInt(String(s.id || "").replace("INV-", ""), 10);
+      return isNaN(n) ? m : Math.max(m, n);
+    }, 1025);
+    const invoiceNo = `INV-${maxInvoice + 1}`;
     const customer = data.customers.find((x) => x.id === customerId);
     const sale = {
       id: invoiceNo,
@@ -323,10 +327,7 @@ export function AppDataProvider({ children }) {
       const nextSales = prev.sales.map((s) => {
         if (s.id !== saleId) return s;
         const nextTotal = Math.max(0, Number(s.total || 0) - safeRefund);
-        const nextPaid = Math.max(
-          0,
-          Number(s.paid || 0) - Math.min(Number(s.paid || 0), safeRefund),
-        );
+        const nextPaid = Math.min(Number(s.paid || 0), nextTotal);
         const nextDue = Math.max(0, nextTotal - nextPaid);
         return {
           ...s,

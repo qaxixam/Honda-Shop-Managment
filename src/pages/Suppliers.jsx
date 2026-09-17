@@ -24,6 +24,13 @@ import FormField from "../components/FormField";
 import { useAppData } from "../context/AppDataContext";
 
 const blank = { name: "", company: "", phone: "", address: "" };
+function nextSupplierId(suppliers) {
+  const max = suppliers.reduce((m, s) => {
+    const n = parseInt(String(s.id || "").replace("HBSUP-", ""), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return `HBSUP-${String(max + 1).padStart(3, "0")}`;
+}
 
 export default function Suppliers() {
   const navigate = useNavigate();
@@ -68,8 +75,7 @@ export default function Suppliers() {
 
   function saveSupplier() {
     if (!form.name.trim()) return;
-    const id =
-      editing?.id || `HBSUP-${String(suppliers.length + 1).padStart(3, "0")}`;
+    const id = editing?.id || nextSupplierId(suppliers);
     editing
       ? updateSupplier(editing.id, { ...form })
       : addSupplier({

@@ -46,6 +46,12 @@ export default function POS() {
     document.body.classList.add("receipt-mode");
     setTimeout(() => window.print(), 50);
   };
+  // Stale customer reference clear karo
+  useEffect(() => {
+    if (customerId && !customers.find((c) => c.id === customerId)) {
+      setCustomerId("");
+    }
+  }, [customerId, customers]);
 
   const customer = customers.find((c) => c.id === customerId) || null;
 
@@ -121,12 +127,17 @@ export default function POS() {
 
   function saveCustomer() {
     if (!newCustomer.name.trim()) return;
-    const id = `HBC-${String(customers.length + 1).padStart(3, "0")}`;
+    const max = customers.reduce((m, c) => {
+      const n = parseInt(String(c.id || "").replace("HBC-", ""), 10);
+      return isNaN(n) ? m : Math.max(m, n);
+    }, 0);
+    const id = `HBC-${String(max + 1).padStart(3, "0")}`;
     addCustomer({ ...newCustomer, id, visits: 0, spent: 0, due: 0 });
     setCustomerId(id);
     setNewCustomer({ name: "", phone: "", address: "" });
     setShowAddCustomer(false);
     setShowCustomer(false);
+    setPaidTouched(false);
   }
 
   function saveSale(shouldPrint = false) {

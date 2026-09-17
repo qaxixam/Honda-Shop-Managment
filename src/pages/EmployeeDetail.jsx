@@ -11,22 +11,16 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
-import {
-  Button,
-  Modal,
-  IconButton,
-  Input,
-  Panel,
-} from "../components/ui";
+import { Button, Modal, IconButton, Input, Panel } from "../components/ui";
 import FormField from "../components/FormField";
 import { money, date } from "../lib/utils";
 import { useAppData } from "../context/AppDataContext";
 
-const advanceBlank = {
+const makeAdvanceBlank = () => ({
   amount: "",
   date: new Date().toISOString().slice(0, 10),
   note: "",
-};
+});
 
 export default function EmployeeDetail() {
   const { id } = useParams();
@@ -34,7 +28,7 @@ export default function EmployeeDetail() {
   const { employees, advances, addAdvance, deleteAdvance } = useAppData();
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(advanceBlank);
+  const [form, setForm] = useState(makeAdvanceBlank);
 
   const employee = employees.find((e) => e.id === id);
 
@@ -75,10 +69,7 @@ export default function EmployeeDetail() {
     (sum, a) => sum + Number(a.amount || 0),
     0,
   );
-  const remaining = Math.max(
-    0,
-    Number(employee.salary || 0) - totalAdvance,
-  );
+  const remaining = Math.max(0, Number(employee.salary || 0) - totalAdvance);
   const lastAdvanceDate =
     employeeAdvances.length > 0 ? employeeAdvances[0].date : null;
 
@@ -95,7 +86,7 @@ export default function EmployeeDetail() {
 
   function close() {
     setOpen(false);
-    setForm(advanceBlank);
+    setForm(makeAdvanceBlank);
   }
 
   function removeAdvance(a) {
@@ -158,19 +149,13 @@ export default function EmployeeDetail() {
         <Panel bodyClassName="p-0">
           <div className="flex items-center justify-between border-b border-hm-border px-4 py-3">
             <div>
-              <h2 className="text-hm-title text-hm-text">
-                Advance history
-              </h2>
+              <h2 className="text-hm-title text-hm-text">Advance history</h2>
               <p className="mt-0.5 text-hm-meta text-hm-text-subtle">
                 {employeeAdvances.length} record
                 {employeeAdvances.length === 1 ? "" : "s"} · newest first
               </p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setOpen(true)}
-            >
+            <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
               <Plus size={13} />
               Add
             </Button>
@@ -195,9 +180,7 @@ export default function EmployeeDetail() {
                       {date(a.date)}
                     </td>
                     <td className="px-4 text-hm-text-muted">
-                      {a.note || (
-                        <span className="text-hm-text-subtle">—</span>
-                      )}
+                      {a.note || <span className="text-hm-text-subtle">—</span>}
                     </td>
                     <td className="px-4 text-right tabular-nums font-medium text-hm-warning">
                       {money(a.amount)}
@@ -297,9 +280,7 @@ export default function EmployeeDetail() {
               type="number"
               min="1"
               value={form.amount}
-              onChange={(e) =>
-                setForm({ ...form, amount: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
               placeholder="e.g. 5000"
             />
           </FormField>
@@ -317,11 +298,7 @@ export default function EmployeeDetail() {
             />
           </FormField>
 
-          <FormField
-            label="Note"
-            htmlFor="adv-note"
-            hint="Optional"
-          >
+          <FormField label="Note" htmlFor="adv-note" hint="Optional">
             <Input
               id="adv-note"
               value={form.note}
@@ -332,9 +309,7 @@ export default function EmployeeDetail() {
 
           {Number(form.amount) > 0 && (
             <div className="flex items-center justify-between rounded-hm-md border border-hm-border bg-hm-surface-2 px-3 py-2 text-hm-body">
-              <span className="text-hm-text-muted">
-                New total advance
-              </span>
+              <span className="text-hm-text-muted">New total advance</span>
               <strong className="tabular-nums text-hm-warning">
                 {money(totalAdvance + Number(form.amount || 0))}
               </strong>
@@ -357,8 +332,7 @@ export default function EmployeeDetail() {
 }
 
 function Stat({ label, value, tone = "default" }) {
-  const valueColor =
-    tone === "warning" ? "text-hm-warning" : "text-hm-text";
+  const valueColor = tone === "warning" ? "text-hm-warning" : "text-hm-text";
   return (
     <div className="px-4 py-3">
       <div className="text-hm-meta text-hm-text-muted">{label}</div>

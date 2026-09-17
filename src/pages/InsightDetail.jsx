@@ -114,7 +114,7 @@ export default function InsightDetail() {
               value={
                 sale.customerId ? (
                   <Link
-                    to="/customers"
+                    to={`/customers/${sale.customerId}`}
                     className="text-hm-text hover:underline"
                   >
                     {sale.customer}
@@ -300,7 +300,9 @@ export default function InsightDetail() {
     content = <ProductSales sales={sales} products={products} />;
   if (type === "service-sales") content = <ServiceSales sales={sales} />;
   if (type === "profit")
-    content = <ProfitDetail sales={sales} expenses={expenses} />;
+    content = (
+      <ProfitDetail sales={sales} expenses={expenses} returns={returns} />
+    );
   if (type === "discounts") content = <DiscountDetail sales={sales} />;
 
   return (
@@ -737,19 +739,30 @@ function DiscountDetail({ sales }) {
   );
 }
 
-function ProfitDetail({ sales, expenses }) {
+function ProfitDetail({ sales, expenses, returns }) {
   const revenue = sales.reduce((a, s) => a + Number(s.total || 0), 0);
-  const cost = sales.reduce(
-    (a, s) =>
-      a +
-      (s.lineItems || [])
-        .filter((i) => i.type === "product")
-        .reduce(
-          (x, i) => x + Number(i.purchasePrice || 0) * Number(i.qty || 0),
-          0,
-        ),
-    0,
-  );
+  const cost = sales.reduce((sum, s) => {
+    const grossCost = (s.lineItems || [])
+      .filter((i) => i.type === "product")
+      .reduce(
+        (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
+        0,
+      );
+    const returnedCost = (returns || [])
+      .filter((r) => r.saleId === s.id)
+      .reduce(
+        (rs, r) =>
+          rs +
+          (r.items || [])
+            .filter((i) => i.type === "product")
+            .reduce(
+              (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
+              0,
+            ),
+        0,
+      );
+    return sum + Math.max(0, grossCost - returnedCost);
+  }, 0);
   const exp = expenses.reduce((a, e) => a + Number(e.amount || 0), 0);
   const net = revenue - cost - exp;
 

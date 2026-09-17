@@ -30,17 +30,28 @@ export default function Dashboard() {
     (p) => Number(p.stock) <= Number(p.minStock),
   );
 
-  const productCost = sales.reduce(
-    (sum, s) =>
-      sum +
-      (s.lineItems || [])
-        .filter((i) => i.type === "product")
-        .reduce(
-          (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
-          0,
-        ),
-    0,
-  );
+  const productCost = sales.reduce((sum, s) => {
+    const grossCost = (s.lineItems || [])
+      .filter((i) => i.type === "product")
+      .reduce(
+        (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
+        0,
+      );
+    const returnedCost = (returns || [])
+      .filter((r) => r.saleId === s.id)
+      .reduce(
+        (rs, r) =>
+          rs +
+          (r.items || [])
+            .filter((i) => i.type === "product")
+            .reduce(
+              (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
+              0,
+            ),
+        0,
+      );
+    return sum + Math.max(0, grossCost - returnedCost);
+  }, 0);
   const expensesTotal = expenses.reduce((a, e) => a + Number(e.amount || 0), 0);
   const netProfit = revenue - productCost - expensesTotal;
   const outstanding = revenue - collected;

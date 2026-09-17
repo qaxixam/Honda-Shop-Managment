@@ -17,6 +17,13 @@ import { useAppData } from "../context/AppDataContext";
 import { useNavigate } from "react-router-dom";
 
 const blank = { name: "", phone: "", address: "" };
+function nextCustomerId(customers) {
+  const max = customers.reduce((m, c) => {
+    const n = parseInt(String(c.id || "").replace("HBC-", ""), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return `HBC-${String(max + 1).padStart(3, "0")}`;
+}
 
 export default function Customers() {
   const navigate = useNavigate();
@@ -52,7 +59,7 @@ export default function Customers() {
     if (!form.name.trim()) return;
     const item = {
       ...form,
-      id: editing?.id || `HBC-${String(customers.length + 1).padStart(3, "0")}`,
+      id: editing?.id || nextCustomerId(customers),
       visits: Number(editing?.visits || 0),
       spent: Number(editing?.spent || 0),
       due: Number(editing?.due || 0),

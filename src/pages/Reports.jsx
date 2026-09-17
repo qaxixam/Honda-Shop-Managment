@@ -45,17 +45,28 @@ export default function Reports() {
   );
   const collected = filtered.sales.reduce((a, b) => a + Number(b.paid || 0), 0);
   const due = filtered.sales.reduce((a, b) => a + Number(b.due || 0), 0);
-  const cost = filtered.sales.reduce(
-    (sum, s) =>
-      sum +
-      (s.lineItems || [])
-        .filter((i) => i.type === "product")
-        .reduce(
-          (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
-          0,
-        ),
-    0,
-  );
+  const cost = filtered.sales.reduce((sum, s) => {
+    const grossCost = (s.lineItems || [])
+      .filter((i) => i.type === "product")
+      .reduce(
+        (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
+        0,
+      );
+    const returnedCost = filtered.returns
+      .filter((r) => r.saleId === s.id)
+      .reduce(
+        (rs, r) =>
+          rs +
+          (r.items || [])
+            .filter((i) => i.type === "product")
+            .reduce(
+              (a, i) => a + Number(i.purchasePrice || 0) * Number(i.qty || 0),
+              0,
+            ),
+        0,
+      );
+    return sum + Math.max(0, grossCost - returnedCost);
+  }, 0);
   const exp = filtered.expenses.reduce((a, b) => a + Number(b.amount || 0), 0);
   const net = revenue - cost - exp;
 

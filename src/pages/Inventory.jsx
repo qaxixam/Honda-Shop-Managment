@@ -27,6 +27,14 @@ const blank = {
   unit: "piece",
 };
 
+function nextProductId(products) {
+  const max = products.reduce((m, p) => {
+    const n = parseInt(String(p.id || "").replace("HBP-", ""), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return `HBP-${String(max + 1).padStart(4, "0")}`;
+}
+
 export default function Inventory() {
   const { products, suppliers, addProduct, updateProduct, deleteProduct } =
     useAppData();
@@ -61,7 +69,7 @@ export default function Inventory() {
     if (!form.name.trim()) return;
     const item = {
       ...form,
-      id: editing?.id || `HBP-${String(products.length + 1).padStart(4, "0")}`,
+      id: editing?.id || nextProductId(products),
       purchasePrice: Number(form.purchasePrice),
       sellingPrice: Number(form.sellingPrice),
       stock: Number(form.stock),

@@ -93,6 +93,32 @@ ipcMain.handle("shop:backup", async () => {
   fs.copyFileSync(dbPath, result.filePath);
   return result.filePath;
 });
+ipcMain.handle("shop:import", async () => {
+  const result = await dialog.showOpenDialog(win, { title: "Import shop database", properties: ["openFile"], filters: [{ name: "SQLite database", extensions: ["db", "sqlite", "sqlite3"] }, { name: "All files", extensions: ["*"] }] });
+  if (result.canceled || !result.filePaths[0]) return null;
+  const source = result.filePaths[0];
+  if (path.resolve(source) === path.resolve(dbPath)) return dbPath;
+  let sourceDb;
+  try {
+    sourceDb = new Database(source, { readonly: true });
+    const hasState = sourceDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('app_state', 'products', 'sales')").all().length > 0;
+    if (!hasState) throw new Error("This file is not an HBMS database backup.");
+    sourceDb.close();
+    sourceDb = null;
+    if (db) db.close();
+    for (const suffix of ["", "-wal", "-shm"]) {
+      const target = `${dbPath}${suffix}`;
+      if (fs.existsSync(target)) fs.rmSync(target, { force: true });
+    }
+    fs.copyFileSync(source, dbPath);
+    openDatabase(dbPath);
+    return { path: dbPath };
+  } catch (error) {
+    if (sourceDb) sourceDb.close();
+    try { openDatabase(dbPath); } catch { /* keep the original error for the renderer */ }
+    throw new Error(`Import failed: ${error.message}`);
+  }
+});
 
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld("hbmsDesktop", {
   location: () => ipcRenderer.invoke("shop:location"),
   backup: () => ipcRenderer.invoke("shop:backup"),
   import: () => ipcRenderer.invoke("shop:import"),
+  deleteAll: () => ipcRenderer.invoke("shop:delete-all"),
 });

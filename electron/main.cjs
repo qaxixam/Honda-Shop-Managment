@@ -119,6 +119,16 @@ ipcMain.handle("shop:import", async () => {
     throw new Error(`Import failed: ${error.message}`);
   }
 });
+ipcMain.handle("shop:delete-all", async () => {
+  const transaction = db.transaction(() => {
+    for (const table of collections) db.prepare(`DELETE FROM ${table}`).run();
+    db.prepare("DELETE FROM sale_items").run();
+    db.prepare("DELETE FROM purchases").run();
+    db.prepare("DELETE FROM app_state").run();
+  });
+  transaction();
+  return true;
+});
 
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

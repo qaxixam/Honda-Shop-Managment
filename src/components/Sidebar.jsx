@@ -23,7 +23,7 @@ const groups = [
     label: "Workspace",
     items: [
       ["Dashboard", "/", LayoutDashboard],
-      ["Point of Sale", "/pos", ShoppingCart],
+      ["Billing", "/pos", ShoppingCart],
       ["Bill History", "/history", History],
       ["Returns", "/returns", RotateCcw],
     ],

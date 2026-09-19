@@ -12,6 +12,7 @@ const blank = {
   cost: "",
   time: "",
   category: "Maintenance",
+  active: true,
 };
 function nextServiceId(services) {
   const max = services.reduce((m, s) => {
@@ -55,6 +56,7 @@ export default function Services() {
       charges: Number(form.charges),
       cost: Number(form.cost || 0),
       time: Number(form.time),
+      active: form.active !== false,
     };
     editing ? updateService(editing.id, item) : addService(item);
     close();
@@ -117,6 +119,7 @@ export default function Services() {
                 <th className="px-4 text-right">Cost</th>
                 <th className="px-4 text-right">Profit</th>
                 <th className="px-4 text-right">Time</th>
+                <th className="px-4">Status</th>
                 <th className="px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -143,6 +146,15 @@ export default function Services() {
                   </td>
                   <td className="px-4 text-right tabular-nums text-hm-text-muted">
                     {s.time} min
+                  </td>
+                  <td className="px-4">
+                    <button
+                      type="button"
+                      className={`rounded-hm-sm border px-2 py-1 text-hm-meta font-medium ${s.active === false ? "border-red-300 bg-red-50 text-red-700" : "border-hm-success bg-hm-success-soft text-hm-success"}`}
+                      onClick={() => updateService(s.id, { active: s.active === false })}
+                    >
+                      {s.active === false ? "Disabled" : "Active"}
+                    </button>
                   </td>
                   <td className="px-4">
                     <div className="flex items-center justify-end gap-0.5">
@@ -265,6 +277,14 @@ export default function Services() {
               onChange={(e) => setForm({ ...form, time: e.target.value })}
             />
           </FormField>
+          <label className="flex items-center gap-2 text-hm-body text-hm-text">
+            <input
+              type="checkbox"
+              checked={form.active !== false}
+              onChange={(e) => setForm({ ...form, active: e.target.checked })}
+            />
+            Available for billing
+          </label>
         </div>
         <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={close}>

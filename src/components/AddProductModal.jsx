@@ -95,16 +95,17 @@ export default function AddProductModal({
                 )?.qty || 0;
                 const availableStock = Math.max(0, Number(p.stock) - Number(quantity));
                 const out = availableStock <= 0;
+                const missingPrice = Number(p.sellingPrice) <= 0 || Number(p.purchasePrice) <= 0;
                 return (
                   <li key={p.id}>
                     <button
                       type="button"
-                      disabled={out}
+                      aria-disabled={out || missingPrice}
                       onClick={() => handleAdd(p)}
                       className={[
                         "relative flex h-full w-full flex-col rounded-hm-md border px-3 py-2.5 pb-8 text-left transition-colors",
-                        out
-                          ? "cursor-not-allowed border-hm-border bg-hm-surface-2 opacity-50"
+                        out || missingPrice
+                          ? "cursor-not-allowed border-red-300 bg-red-50 text-red-900 opacity-90"
                           : quantity > 0
                             ? "border-hm-primary bg-hm-primary-soft/30 hover:border-hm-primary"
                             : "border-hm-border hover:border-hm-border-strong hover:bg-hm-surface-2",
@@ -130,7 +131,7 @@ export default function AddProductModal({
                             out ? "text-hm-danger" : "text-hm-text-subtle"
                           }`}
                         >
-                          {out ? "Out of stock" : `${availableStock} in stock`}
+                          {out ? "Out of stock" : missingPrice ? "Price required" : `${availableStock} in stock`}
                         </div>
                       </div>
                       {quantity > 0 && (

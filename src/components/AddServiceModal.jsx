@@ -30,6 +30,7 @@ export default function AddServiceModal({
   }, [services, q, category]);
 
   function handleAdd(s) {
+    if (s.active === false) return;
     onAdd({ ...s, type: "service", price: s.charges }, "service");
   }
 
@@ -89,12 +90,17 @@ export default function AddServiceModal({
                     const quantity = cart.find(
                       (item) => item.id === s.id && item.type === "service",
                     )?.qty || 0;
+                    const disabled = s.active === false;
+                    const missingPrice = Number(s.charges) <= 0 || Number(s.cost) <= 0;
                     return (
                   <button
                     type="button"
+                    aria-disabled={disabled || missingPrice}
                     onClick={() => handleAdd(s)}
                     className={`relative flex h-full w-full flex-col rounded-hm-md border px-3 py-2.5 pb-8 text-left transition-colors ${
-                      quantity > 0
+                      disabled || missingPrice
+                        ? "cursor-not-allowed border-red-300 bg-red-50 text-red-900 opacity-90"
+                        : quantity > 0
                         ? "border-hm-primary bg-hm-primary-soft/30 hover:border-hm-primary"
                         : "border-hm-border hover:border-hm-border-strong hover:bg-hm-surface-2"
                     }`}
@@ -107,7 +113,7 @@ export default function AddServiceModal({
                       {s.time ? ` · ${s.time} min` : ""}
                     </div>
                     <div className="mt-2 text-hm-body font-medium tabular-nums text-hm-text">
-                      {money(s.charges)}
+                      {disabled ? "Disabled" : missingPrice ? "Price required" : money(s.charges)}
                     </div>
                     {quantity > 0 && (
                       <span className="absolute bottom-2 right-2 inline-flex min-w-6 items-center justify-center rounded-full bg-hm-primary px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white shadow-sm">

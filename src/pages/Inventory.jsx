@@ -10,6 +10,7 @@ import {
   Input,
   Select,
   Panel,
+  useToast,
 } from "../components/ui";
 import FormField from "../components/FormField";
 import { useAppData } from "../context/AppDataContext";
@@ -45,6 +46,7 @@ export default function Inventory() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);
+  const { showToast } = useToast();
 
   const categories = ["All", ...new Set(products.map((p) => p.category))];
 
@@ -67,7 +69,18 @@ export default function Inventory() {
   const totalUnits = products.reduce((a, p) => a + Number(p.stock), 0);
 
   function save() {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      showToast("Please add a product name.", "warning");
+      return;
+    }
+    if (Number(form.purchasePrice) <= 0 || Number(form.sellingPrice) <= 0) {
+      showToast("First add the selling price and purchase price.", "warning");
+      return;
+    }
+    if (!editing && Number(form.stock) <= 0) {
+      showToast("First add available stock greater than zero.", "warning");
+      return;
+    }
     const item = {
       ...form,
       id: editing?.id || nextProductId(products),

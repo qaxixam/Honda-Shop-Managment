@@ -166,13 +166,28 @@ export default function POS() {
   }, [total, paidTouched]);
 
   function addItem(item, type) {
+    const sellingPrice = Number(
+      item.price ?? (type === "product" ? item.sellingPrice : item.charges),
+    );
+    const purchasePrice = Number(
+      type === "product" ? item.purchasePrice : item.cost,
+    );
+    if (sellingPrice <= 0 || purchasePrice <= 0) {
+      showToast(
+        `${item.name} needs both a selling price and purchase price before it can be billed.`,
+        "warning",
+      );
+      return;
+    }
+    if (type === "service" && item.active === false) {
+      showToast(`${item.name} is disabled.`, "warning");
+      return;
+    }
     if (type === "product" && Number(item.stock) <= 0) {
       showToast(`${item.name} is out of stock.`, "warning");
       return;
     }
-    const price = Number(
-      item.price ?? (type === "product" ? item.sellingPrice : item.charges),
-    );
+    const price = sellingPrice;
     setCart((current) => {
       const found = current.find((i) => i.id === item.id && i.type === type);
       if (found) {

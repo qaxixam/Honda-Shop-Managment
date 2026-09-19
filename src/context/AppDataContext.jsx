@@ -18,6 +18,7 @@ const initial = {
   employees: [],
   advances: [],
   salaryPayments: [],
+  shopSettings: { shopName: "" },
 };
 
 const AppDataContext = createContext(null);

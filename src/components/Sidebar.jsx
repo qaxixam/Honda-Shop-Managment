@@ -38,7 +38,7 @@ const groups = [
       ["Expenses", "/expenses", WalletCards],
       ["Employees", "/employees", UserCog],
       ["Salaries", "/salaries", Banknote],
-      ["Shop & Backup", "/shop", Settings],
+      ["Administration", "/shop", Settings],
     ],
   },
   {

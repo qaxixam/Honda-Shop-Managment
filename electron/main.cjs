@@ -6,7 +6,7 @@ const Database = require("better-sqlite3");
 let win;
 let db;
 let dbPath;
-const collections = ["products", "services", "customers", "sales", "suppliers", "expenses", "employees", "advances", "salary_payments", "returns", "bill_drafts"];
+const collections = ["products", "services", "customers", "sales", "suppliers", "expenses", "employees", "advances", "salary_payments", "returns", "bill_drafts", "shop_settings"];
 
 function createSchema() {
   db.exec(`CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL, updated_at TEXT NOT NULL); ${collections.map((name) => `CREATE TABLE IF NOT EXISTS ${name} (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT NOT NULL);`).join(" ")} CREATE TABLE IF NOT EXISTS sale_items (id TEXT PRIMARY KEY, sale_id TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS purchases (id TEXT PRIMARY KEY, supplier_id TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL);`);
@@ -16,7 +16,9 @@ function saveRelational(data) {
   const transaction = db.transaction((state) => {
     for (const table of collections) {
       db.prepare(`DELETE FROM ${table}`).run();
-      const items = state[table === "salary_payments" ? "salaryPayments" : table === "bill_drafts" ? "billDrafts" : table] || [];
+      const stateKey = table === "salary_payments" ? "salaryPayments" : table === "bill_drafts" ? "billDrafts" : table === "shop_settings" ? "shopSettings" : table;
+      const source = state[stateKey];
+      const items = table === "shop_settings" ? [{ id: "main", ...(source || {}) }] : (source || []);
       const insert = db.prepare(`INSERT INTO ${table} (id, data, updated_at) VALUES (?, ?, ?)`);
       for (const item of items) insert.run(String(item.id), JSON.stringify(item), new Date().toISOString());
     }
@@ -35,8 +37,9 @@ function loadRelational() {
   if (!hasRows) return null;
   const result = {};
   for (const table of collections) {
-    const key = table === "salary_payments" ? "salaryPayments" : table === "bill_drafts" ? "billDrafts" : table;
-    result[key] = db.prepare(`SELECT data FROM ${table} ORDER BY rowid`).all().map((row) => JSON.parse(row.data));
+    const key = table === "salary_payments" ? "salaryPayments" : table === "bill_drafts" ? "billDrafts" : table === "shop_settings" ? "shopSettings" : table;
+    const rows = db.prepare(`SELECT data FROM ${table} ORDER BY rowid`).all().map((row) => JSON.parse(row.data));
+    result[key] = table === "shop_settings" ? (rows[0] || { shopName: "" }) : rows;
   }
   return result;
 }

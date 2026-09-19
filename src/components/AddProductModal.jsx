@@ -3,7 +3,13 @@ import { Search, Package } from "lucide-react";
 import { Modal, Input } from "../components/ui";
 import { money } from "../lib/utils";
 
-export default function AddProductModal({ open, onClose, products, onAdd }) {
+export default function AddProductModal({
+  open,
+  onClose,
+  products,
+  cart = [],
+  onAdd,
+}) {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All");
 
@@ -26,7 +32,10 @@ export default function AddProductModal({ open, onClose, products, onAdd }) {
   }, [products, q, category]);
 
   function handleAdd(p) {
-    if (Number(p.stock) <= 0) return;
+    const selectedQuantity = cart.find(
+      (item) => item.id === p.id && item.type === "product",
+    )?.qty || 0;
+    if (Number(p.stock) - Number(selectedQuantity) <= 0) return;
     onAdd({ ...p, type: "product", price: p.sellingPrice }, "product");
   }
 
@@ -81,7 +90,11 @@ export default function AddProductModal({ open, onClose, products, onAdd }) {
           {filtered.length > 0 ? (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((p) => {
-                const out = Number(p.stock) <= 0;
+                const quantity = cart.find(
+                  (item) => item.id === p.id && item.type === "product",
+                )?.qty || 0;
+                const availableStock = Math.max(0, Number(p.stock) - Number(quantity));
+                const out = availableStock <= 0;
                 return (
                   <li key={p.id}>
                     <button
@@ -89,10 +102,12 @@ export default function AddProductModal({ open, onClose, products, onAdd }) {
                       disabled={out}
                       onClick={() => handleAdd(p)}
                       className={[
-                        "flex h-full w-full flex-col rounded-hm-md border px-3 py-2.5 text-left transition-colors",
+                        "relative flex h-full w-full flex-col rounded-hm-md border px-3 py-2.5 pb-8 text-left transition-colors",
                         out
                           ? "cursor-not-allowed border-hm-border bg-hm-surface-2 opacity-50"
-                          : "border-hm-border hover:border-hm-border-strong hover:bg-hm-surface-2",
+                          : quantity > 0
+                            ? "border-hm-primary bg-hm-primary-soft/30 hover:border-hm-primary"
+                            : "border-hm-border hover:border-hm-border-strong hover:bg-hm-surface-2",
                       ].join(" ")}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -115,9 +130,14 @@ export default function AddProductModal({ open, onClose, products, onAdd }) {
                             out ? "text-hm-danger" : "text-hm-text-subtle"
                           }`}
                         >
-                          {out ? "Out of stock" : `${p.stock} in stock`}
+                          {out ? "Out of stock" : `${availableStock} in stock`}
                         </div>
                       </div>
+                      {quantity > 0 && (
+                        <span className="absolute bottom-2 right-2 inline-flex min-w-6 items-center justify-center rounded-full bg-hm-primary px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white shadow-sm">
+                          {quantity}
+                        </span>
+                      )}
                     </button>
                   </li>
                 );

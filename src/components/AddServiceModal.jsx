@@ -3,7 +3,13 @@ import { Search, Wrench } from "lucide-react";
 import { Modal, Input } from "../components/ui";
 import { money } from "../lib/utils";
 
-export default function AddServiceModal({ open, onClose, services, onAdd }) {
+export default function AddServiceModal({
+  open,
+  onClose,
+  services,
+  cart = [],
+  onAdd,
+}) {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("All");
 
@@ -79,10 +85,19 @@ export default function AddServiceModal({ open, onClose, services, onAdd }) {
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((s) => (
                 <li key={s.id}>
+                  {(() => {
+                    const quantity = cart.find(
+                      (item) => item.id === s.id && item.type === "service",
+                    )?.qty || 0;
+                    return (
                   <button
                     type="button"
                     onClick={() => handleAdd(s)}
-                    className="flex h-full w-full flex-col rounded-hm-md border border-hm-border px-3 py-2.5 text-left transition-colors hover:border-hm-border-strong hover:bg-hm-surface-2"
+                    className={`relative flex h-full w-full flex-col rounded-hm-md border px-3 py-2.5 pb-8 text-left transition-colors ${
+                      quantity > 0
+                        ? "border-hm-primary bg-hm-primary-soft/30 hover:border-hm-primary"
+                        : "border-hm-border hover:border-hm-border-strong hover:bg-hm-surface-2"
+                    }`}
                   >
                     <div className="truncate text-hm-body font-medium text-hm-text">
                       {s.name}
@@ -94,7 +109,14 @@ export default function AddServiceModal({ open, onClose, services, onAdd }) {
                     <div className="mt-2 text-hm-body font-medium tabular-nums text-hm-text">
                       {money(s.charges)}
                     </div>
+                    {quantity > 0 && (
+                      <span className="absolute bottom-2 right-2 inline-flex min-w-6 items-center justify-center rounded-full bg-hm-primary px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white shadow-sm">
+                        {quantity}
+                      </span>
+                    )}
                   </button>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>

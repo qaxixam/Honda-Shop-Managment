@@ -376,6 +376,7 @@ export default function POS() {
         open={showProductModal}
         onClose={() => setShowProductModal(false)}
         products={products}
+        cart={cart}
         onAdd={addItem}
       />
 
@@ -384,6 +385,7 @@ export default function POS() {
         open={showServiceModal}
         onClose={() => setShowServiceModal(false)}
         services={services}
+        cart={cart}
         onAdd={addItem}
       />
 

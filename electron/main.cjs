@@ -2,6 +2,7 @@ const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const Database = require("better-sqlite3");
+const crypto = require("crypto");
 
 let win;
 let db;
@@ -9,7 +10,19 @@ let dbPath;
 const collections = ["products", "services", "customers", "sales", "suppliers", "expenses", "employees", "advances", "salary_payments", "returns", "bill_drafts", "shop_settings"];
 
 function createSchema() {
-  db.exec(`CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL, updated_at TEXT NOT NULL); ${collections.map((name) => `CREATE TABLE IF NOT EXISTS ${name} (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT NOT NULL);`).join(" ")} CREATE TABLE IF NOT EXISTS sale_items (id TEXT PRIMARY KEY, sale_id TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS purchases (id TEXT PRIMARY KEY, supplier_id TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL);`);
+  db.exec(`CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL, updated_at TEXT NOT NULL); ${collections.map((name) => `CREATE TABLE IF NOT EXISTS ${name} (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT NOT NULL);`).join(" ")} CREATE TABLE IF NOT EXISTS sale_items (id TEXT PRIMARY KEY, sale_id TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS purchases (id TEXT PRIMARY KEY, supplier_id TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL, created_at TEXT NOT NULL);`);
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+function verifyPassword(password, stored) {
+  const [salt, expected] = String(stored).split(":");
+  if (!salt || !expected) return false;
+  const actual = crypto.scryptSync(password, salt, 64).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
 }
 
 function saveRelational(data) {
@@ -75,6 +88,19 @@ ipcMain.handle("db:save", (_event, data) => {
   saveRelational(data);
   db.prepare("INSERT INTO app_state (id, data, updated_at) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at").run(JSON.stringify(data), new Date().toISOString());
   return true;
+});
+ipcMain.handle("auth:status", () => ({ setupRequired: db.prepare("SELECT COUNT(*) AS count FROM users").get().count === 0 }));
+ipcMain.handle("auth:setup", (_event, { username, password }) => {
+  const cleanUsername = String(username || "").trim();
+  if (!cleanUsername || String(password || "").length < 6) throw new Error("Username and a password of at least 6 characters are required.");
+  if (db.prepare("SELECT COUNT(*) AS count FROM users").get().count > 0) throw new Error("An admin account already exists.");
+  db.prepare("INSERT INTO users (id, username, password_hash, role, created_at) VALUES (?, ?, ?, 'admin', ?)").run(crypto.randomUUID(), cleanUsername, hashPassword(password), new Date().toISOString());
+  return { username: cleanUsername, role: "admin" };
+});
+ipcMain.handle("auth:login", (_event, { username, password }) => {
+  const user = db.prepare("SELECT username, password_hash, role FROM users WHERE username = ?").get(String(username || "").trim());
+  if (!user || !verifyPassword(String(password || ""), user.password_hash)) throw new Error("Invalid username or password.");
+  return { username: user.username, role: user.role };
 });
 ipcMain.handle("shop:choose-location", async () => {
   const result = await dialog.showOpenDialog(win, { title: "Choose shop data folder", properties: ["openDirectory", "createDirectory"] });

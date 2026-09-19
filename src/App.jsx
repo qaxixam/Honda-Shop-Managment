@@ -21,12 +21,13 @@ import EmployeeDetail from "./pages/EmployeeDetail";
 import SupplierDetail from "./pages/SupplierDetail";
 import Salaries from "./pages/Salaries";
 import ShopSettings from "./pages/ShopSettings";
+import AuthGate from "./components/AuthGate";
 export default function App() {
   const [open, setOpen] = useState(false);
   return (
     <AppDataProvider>
       <ToastProvider>
-        <div className="min-h-screen bg-hm-bg text-hm-text">
+        <AuthGate><div className="min-h-screen bg-hm-bg text-hm-text">
           <Sidebar open={open} onClose={() => setOpen(false)} />
 
           {/* pl matches the sidebar width exactly (272px). */}
@@ -55,7 +56,7 @@ export default function App() {
               </Routes>
             </main>
           </div>
-        </div>
+        </div></AuthGate>
       </ToastProvider>
     </AppDataProvider>
   );

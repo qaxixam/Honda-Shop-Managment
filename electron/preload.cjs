@@ -7,4 +7,9 @@ contextBridge.exposeInMainWorld("hbmsDesktop", {
   backup: () => ipcRenderer.invoke("shop:backup"),
   import: () => ipcRenderer.invoke("shop:import"),
   deleteAll: () => ipcRenderer.invoke("shop:delete-all"),
+  auth: {
+    status: () => ipcRenderer.invoke("auth:status"),
+    setup: (username, password) => ipcRenderer.invoke("auth:setup", { username, password }),
+    login: (username, password) => ipcRenderer.invoke("auth:login", { username, password }),
+  },
 });

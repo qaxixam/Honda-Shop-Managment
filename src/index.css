@@ -54,6 +54,21 @@
     @apply cursor-not-allowed opacity-60;
   }
 
+  /* Immediate pressed feedback for every clickable control. */
+  button:not(:disabled):active,
+  a:active,
+  [role="button"]:active {
+    transform: translateY(1px);
+    filter: brightness(0.92);
+  }
+
+  button:not(:disabled),
+  a,
+  [role="button"] {
+    transition-property: color, background-color, border-color, opacity, transform, filter;
+    transition-duration: 100ms;
+  }
+
   ::selection {
     background: #1e293b;
     color: #ffffff;

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CalendarDays, FileText, Search, Trash2 } from "lucide-react";
+import { CalendarDays, FileText, Search, Trash2, Download } from "lucide-react";
 import PageHeader from "../components/PageHeader";
-import { Input, Panel, Select, Status } from "../components/ui";
+import { Button, Input, Panel, Select, Status } from "../components/ui";
 import { useAppData } from "../context/AppDataContext";
 import { money, date, todayISO } from "../lib/utils";
 import { saleMetrics } from "../lib/billing";
@@ -11,7 +11,7 @@ const currentYear = new Date().getFullYear();
 const currentMonth = todayISO().slice(0, 7);
 
 export default function BillHistory() {
-  const { sales, billDrafts, removeBillDraft } = useAppData();
+  const { sales, billDrafts, returns = [], removeBillDraft } = useAppData();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("All");
@@ -55,11 +55,30 @@ export default function BillHistory() {
     { total: 0, paid: 0, due: 0, profit: 0 },
   );
 
+  async function exportPdf() {
+    const file = await window.hbmsDesktop?.exportReportPdf({
+      title: "HBMS Bill History",
+      periodKey: "history",
+      periodLabel: "Bill History",
+      rangeLabel: `${rows.length} bill${rows.length === 1 ? "" : "s"}`,
+      generatedAt: new Date().toLocaleString("en-PK"),
+      summary: {
+        netSale: totals.total,
+        discount: rows.reduce((sum, row) => sum + Number(row.discountAmount || 0), 0),
+        returns: returns.reduce((sum, item) => sum + Number(item.amount || 0), 0),
+        netProfit: totals.profit,
+      },
+      bills: rows.map((row) => ({ invoice: row.ref, customer: row.customer, date: date(row.date), subtotal: row.subtotal ?? row.total, net: row.total, due: row.due })),
+      returns: returns.map((item) => ({ invoice: item.saleId, customer: item.customer, date: date(item.date), amount: item.amount, reason: item.reason })),
+    });
+    if (file) window.alert(`PDF report saved to:\n${file}`);
+  }
   return (
     <div className="space-y-4">
       <PageHeader
         title="Bill history"
         subtitle="Saved invoices and unsaved POS bills in one place."
+        action={<Button onClick={exportPdf}><Download size={15} /> Export PDF</Button>}
       />
 
       <section className="panel overflow-hidden">
@@ -299,6 +318,24 @@ function matchesPeriod(row, filters) {
 
 function Stat({ label, value, tone = "default" }) {
   const valueColor = tone === "warning" ? "text-hm-warning" : "text-hm-text";
+  async function exportPdf() {
+    const file = await window.hbmsDesktop?.exportReportPdf({
+      title: "HBMS Bill History",
+      periodKey: "history",
+      periodLabel: "Bill History",
+      rangeLabel: `${rows.length} bill${rows.length === 1 ? "" : "s"}`,
+      generatedAt: new Date().toLocaleString("en-PK"),
+      summary: {
+        netSale: totals.total,
+        discount: rows.reduce((sum, row) => sum + Number(row.discountAmount || 0), 0),
+        returns: returns.reduce((sum, item) => sum + Number(item.amount || 0), 0),
+        netProfit: totals.profit,
+      },
+      bills: rows.map((row) => ({ invoice: row.ref, customer: row.customer, date: date(row.date), subtotal: row.subtotal ?? row.total, net: row.total, due: row.due })),
+      returns: returns.map((item) => ({ invoice: item.saleId, customer: item.customer, date: date(item.date), amount: item.amount, reason: item.reason })),
+    });
+    if (file) window.alert(`PDF report saved to:\n${file}`);
+  }
   return (
     <div className="px-4 py-3">
       <div className="text-hm-meta text-hm-text-muted">{label}</div>

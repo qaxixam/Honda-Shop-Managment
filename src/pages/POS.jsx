@@ -32,6 +32,7 @@ export default function POS() {
     upsertBillDraft,
     removeBillDraft,
     billDrafts,
+    shopSettings,
   } = useAppData();
   const { showToast } = useToast();
 
@@ -533,7 +534,7 @@ export default function POS() {
         </Modal>
       </div>
 
-      <ReceiptPrint sale={savedSale} />
+      <ReceiptPrint sale={savedSale} shopName={shopSettings?.shopName || "Honda Bike Shop"} />
     </div>
   );
 }

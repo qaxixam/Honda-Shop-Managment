@@ -64,7 +64,7 @@ export default function Reports() {
     return sum + Math.max(0, grossCost - returnedCost);
   }, 0);
   const exp = filtered.expenses.reduce((a, b) => a + Number(b.amount || 0), 0);
-  const net = revenue - cost - exp;
+  const net = revenue - returned - cost - exp;
 
   function exportCsv() {
     const rows = [
@@ -106,7 +106,35 @@ export default function Reports() {
   }
 
   function print() {
+    document.title = `HBMS-${period}-report`;
     window.print();
+  }
+
+  async function exportPdf() {
+    const file = await window.hbmsDesktop?.exportReportPdf({
+      title: "HBMS Report",
+      periodKey: period,
+      periodLabel: ranges[period],
+      rangeLabel: range.label,
+      generatedAt: new Date().toLocaleString("en-PK"),
+      summary: { netSale: revenue, discount, returns: returned, netProfit: net },
+      bills: filtered.sales.map((s) => ({
+        invoice: s.id,
+        customer: s.customer,
+        date: date(s.date),
+        subtotal: s.subtotal ?? s.total,
+        net: s.total,
+        due: s.due,
+      })),
+      returns: filtered.returns.map((r) => ({
+        invoice: r.saleId,
+        customer: r.customer,
+        date: date(r.date),
+        amount: r.amount,
+        reason: r.reason,
+      })),
+    });
+    if (file) window.alert(`PDF report saved to:\n${file}`);
   }
 
   return (
@@ -119,6 +147,10 @@ export default function Reports() {
             <Button variant="secondary" onClick={print}>
               <Printer size={15} />
               Print
+            </Button>
+            <Button variant="secondary" onClick={exportPdf}>
+              <FileText size={15} />
+              Export PDF
             </Button>
             <Button onClick={exportCsv}>
               <Download size={15} />
@@ -199,55 +231,12 @@ export default function Reports() {
         </div>
       </section>
 
-      {/* Financial summary — horizontal P&L strip */}
-      <Panel bodyClassName="p-0">
-        <div className="flex items-center justify-between border-b border-hm-border px-4 py-3">
-          <h2 className="text-hm-title text-hm-text">Financial summary</h2>
-          <span className="text-hm-meta text-hm-text-subtle tabular-nums">
-            {range.label}
-          </span>
-        </div>
-
-        <div className="grid gap-px bg-hm-border md:grid-cols-3">
-          <div className="bg-hm-surface p-4">
-            <PLCell label="Gross billed" value={grossBeforeReturns} />
-          </div>
-
-          <div className="bg-hm-surface p-4">
-            <PLCell label="Net sales" value={revenue} emphasis />
-            <div className="mt-3 space-y-1.5">
-              <PLDeduction label="Discounts" value={discount} />
-              <PLDeduction label="Returns" value={returned} />
-              <PLDeduction label="Product cost" value={cost} />
-              <PLDeduction label="Expenses" value={exp} />
-            </div>
-          </div>
-
-          <div className="bg-hm-surface p-4">
-            <PLCell
-              label="Net profit"
-              value={net}
-              emphasis
-              tone={net < 0 ? "danger" : "default"}
-            />
-            <div className="mt-3 space-y-1.5">
-              <PLBalance label="Collected" value={collected} />
-              <PLBalance
-                label="Outstanding"
-                value={due}
-                tone={due > 0 ? "warning" : "default"}
-              />
-            </div>
-          </div>
-        </div>
-      </Panel>
-
       {/* Sales record */}
       <Panel bodyClassName="p-0">
         <div className="flex items-center justify-between border-b border-hm-border px-4 py-3">
           <div>
             <h2 className="text-hm-title text-hm-text">
-              {ranges[period]} sales record
+              All bills
             </h2>
             <p className="mt-0.5 text-hm-meta text-hm-text-subtle">
               {range.label}
@@ -267,9 +256,7 @@ export default function Reports() {
                 <th className="px-4">Customer</th>
                 <th className="px-4">Date</th>
                 <th className="px-4 text-right">Subtotal</th>
-                <th className="px-4 text-right">Discount</th>
                 <th className="px-4 text-right">Net</th>
-                <th className="px-4 text-right">Paid</th>
                 <th className="px-4 text-right">Due</th>
               </tr>
             </thead>
@@ -302,16 +289,8 @@ export default function Reports() {
                   <td className="px-4 text-right tabular-nums text-hm-text-muted">
                     {money(s.subtotal ?? s.total)}
                   </td>
-                  <td className="px-4 text-right tabular-nums text-hm-text-muted">
-                    {Number(s.discountAmount || 0) > 0
-                      ? `− ${money(s.discountAmount)}`
-                      : "—"}
-                  </td>
                   <td className="px-4 text-right tabular-nums font-medium">
                     {money(s.total)}
-                  </td>
-                  <td className="px-4 text-right tabular-nums text-hm-text-muted">
-                    {money(s.paid)}
                   </td>
                   <td className="px-4 text-right tabular-nums">
                     {Number(s.due || 0) > 0 ? (
@@ -356,7 +335,7 @@ export default function Reports() {
         <div className="flex items-center justify-between border-b border-hm-border px-4 py-3">
           <div>
             <h2 className="text-hm-title text-hm-text">
-              Returns in this period
+              Returns
             </h2>
             <p className="mt-0.5 text-hm-meta text-hm-text-subtle">
               {range.label}
@@ -372,19 +351,16 @@ export default function Reports() {
           <table className="table min-w-[860px]">
             <thead className="table-head">
               <tr>
-                <th className="px-4">Return</th>
                 <th className="px-4">Invoice</th>
                 <th className="px-4">Customer</th>
                 <th className="px-4">Date</th>
                 <th className="px-4 text-right">Amount</th>
-                <th className="px-4">Method</th>
                 <th className="px-4">Reason</th>
               </tr>
             </thead>
             <tbody>
               {filtered.returns.map((r) => (
                 <tr key={r.id}>
-                  <td className="px-4 font-medium tabular-nums">{r.id}</td>
                   <td className="px-4 tabular-nums">
                     <Link
                       to={`/insights/invoice/${r.saleId}`}
@@ -400,7 +376,6 @@ export default function Reports() {
                   <td className="px-4 text-right tabular-nums font-medium">
                     {money(r.amount)}
                   </td>
-                  <td className="px-4 text-hm-text-muted">{r.method}</td>
                   <td className="px-4 text-hm-text-muted">
                     {r.reason || <span className="text-hm-text-subtle">—</span>}
                   </td>

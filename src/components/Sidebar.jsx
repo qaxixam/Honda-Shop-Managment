@@ -1,5 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
+import { useAppData } from "../context/AppDataContext";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -48,6 +49,7 @@ const groups = [
 ];
 
 export default function Sidebar({ open, onClose }) {
+  const { shopSettings = {} } = useAppData();
   return (
     <>
       {open && (
@@ -69,9 +71,9 @@ export default function Sidebar({ open, onClose }) {
             <Bike size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-hm-title text-hm-text">HBMS</div>
+            <div className="truncate text-hm-title text-hm-text">{shopSettings.shopName || "Honda Bike Shop"}</div>
             <div className="truncate text-hm-meta text-hm-text-subtle">
-              Honda Bike Shop
+              HBMS Desktop
             </div>
           </div>
           <button
@@ -126,12 +128,6 @@ export default function Sidebar({ open, onClose }) {
           ))}
         </nav>
 
-        <div className="border-t border-hm-border px-4 py-3">
-          <div className="flex items-center gap-2 text-hm-meta text-hm-text-muted">
-            <span className="dot bg-hm-success" />
-            <span>Local data · no backend</span>
-          </div>
-        </div>
       </aside>
     </>
   );

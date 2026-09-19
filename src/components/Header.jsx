@@ -1,10 +1,17 @@
 import React from "react";
-import { Bell, Menu, Search } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { useAppData } from "../context/AppDataContext";
 
 export default function Header({ onMenu }) {
+  const { shopSettings = {} } = useAppData();
+  const location = useLocation();
+  const session = JSON.parse(sessionStorage.getItem("hbms_session") || "null");
+  const section = { "/": "Dashboard", "/pos": "Billing", "/history": "Bill History", "/reports": "Reports", "/shop": "Administration", "/inventory": "Inventory", "/services": "Services", "/customers": "Customers", "/suppliers": "Suppliers", "/expenses": "Expenses", "/employees": "Employees", "/salaries": "Salaries", "/returns": "Returns" }[location.pathname] || "HBMS";
+  const shopName = shopSettings.shopName || "Honda Bike Shop";
+  function logout() { sessionStorage.removeItem("hbms_session"); window.location.reload(); }
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-hm-border bg-hm-surface px-4 sm:px-6 lg:px-8">
-      {/* Left: mobile menu + search */}
       <button
         onClick={onMenu}
         className="btn-ghost -ml-2 p-2 lg:hidden"
@@ -14,44 +21,17 @@ export default function Header({ onMenu }) {
         <Menu size={18} />
       </button>
 
-      {/* Search — presentational for now. Wire onSearch when ready. */}
-      <div className="hidden max-w-md flex-1 items-center gap-2 rounded-hm-md border border-hm-border bg-hm-surface-2 px-3 py-1.5 md:flex">
-        <Search size={15} className="text-hm-text-subtle shrink-0" />
-        <input
-          type="search"
-          placeholder="Search products, customers, invoices…"
-          className="w-full bg-transparent text-hm-body text-hm-text outline-none placeholder:text-hm-text-subtle"
-        />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-hm-body font-semibold text-hm-text">{shopName}</div>
+        <div className="truncate text-hm-meta text-hm-text-muted">{section}</div>
       </div>
-
-      {/* Right cluster */}
-      <div className="ml-auto flex items-center gap-1.5">
-        <button
-          className="btn-ghost relative p-2"
-          aria-label="Notifications"
-          type="button"
-        >
-          <Bell size={17} />
-        </button>
-
-        <div className="mx-1 hidden h-6 w-px bg-hm-border sm:block" />
-
-        <button
-          type="button"
-          className="flex items-center gap-2.5 rounded-hm-sm px-1.5 py-1 text-left hover:bg-hm-surface-2"
-        >
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-hm-primary text-hm-meta font-semibold text-white">
-            ZA
-          </div>
-          <div className="hidden min-w-0 sm:block">
-            <div className="truncate text-hm-body font-medium text-hm-text">
-              Shop Admin
-            </div>
-            <div className="truncate text-hm-meta text-hm-text-subtle">
-              Owner
-            </div>
-          </div>
-        </button>
+      <div className="hidden min-w-[720px] whitespace-nowrap border-x border-hm-border px-6 text-center text-[16px] leading-8 text-hm-text-muted xl:block" dir="rtl" lang="ar" style={{ fontFamily: '"Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif' }}>
+        مَا كَانَ مُحَمَّدٌ اَبَاۤ اَحَدٍ مِّنْ رِّجَالِكُمْ وَ لٰكِنْ رَّسُوْلَ اللّٰهِ وَ خَاتَمَ النَّبِیّٖنَؕ-وَ كَانَ اللّٰهُ بِكُلِّ شَیْءٍ عَلِیْمًا۠(۴۰)
+      </div>
+      <div className="mx-1 hidden h-6 w-px bg-hm-border sm:block" />
+      <div className="flex items-center gap-2">
+        <div className="hidden text-right sm:block"><div className="text-hm-body font-medium text-hm-text">{session?.username || "Admin"}</div><div className="text-hm-meta text-hm-text-subtle">{session?.role || "admin"}</div></div>
+        <button type="button" className="btn-ghost p-2" onClick={logout} aria-label="Logout" title="Logout"><LogOut size={16} /></button>
       </div>
     </header>
   );

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const Database = require("better-sqlite3");
@@ -66,6 +66,7 @@ function openDatabase(file) {
 }
 
 function createWindow() {
+  Menu.setApplicationMenu(null);
   const defaultPath = path.join(app.getPath("userData"), "shop-data", "hbms.db");
   openDatabase(defaultPath);
   win = new BrowserWindow({ width: 1440, height: 900, minWidth: 1100, minHeight: 700, webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false } });
@@ -154,6 +155,38 @@ ipcMain.handle("shop:delete-all", async () => {
   });
   transaction();
   return true;
+});
+
+function htmlEscape(value) {
+  return String(value ?? "").replace(/[&<>\"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[char]);
+}
+function pdfMoney(value) {
+  return `Rs. ${Number(value || 0).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+ipcMain.handle("report:export-pdf", async (_event, report) => {
+  const now = new Date();
+  const exportDate = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+  const exportTime = [String(now.getHours()).padStart(2, "0"), String(now.getMinutes()).padStart(2, "0"), String(now.getSeconds()).padStart(2, "0"), String(now.getMilliseconds()).padStart(3, "0")].join("-");
+  const result = await dialog.showSaveDialog(win, { title: "Export report as PDF", defaultPath: `hbms-${report.periodKey}-report-${exportDate}-${exportTime}.pdf`, filters: [{ name: "PDF document", extensions: ["pdf"] }] });
+  if (result.canceled || !result.filePath) return null;
+  const bills = (report.bills || []).map((bill) => `<tr><td>${htmlEscape(bill.invoice)}</td><td>${htmlEscape(bill.customer)}</td><td>${htmlEscape(bill.date)}</td><td>${pdfMoney(bill.subtotal)}</td><td>${pdfMoney(bill.net)}</td><td>${pdfMoney(bill.due)}</td></tr>`).join("");
+  const returns = (report.returns || []).map((item) => `<tr><td>${htmlEscape(item.invoice)}</td><td>${htmlEscape(item.customer)}</td><td>${htmlEscape(item.date)}</td><td>${pdfMoney(item.amount)}</td><td>${htmlEscape(item.reason || "—")}</td></tr>`).join("");
+  const summary = [["Net sale", pdfMoney(report.summary.netSale)], ["Discount", pdfMoney(report.summary.discount)], ["Returns", pdfMoney(report.summary.returns)], ["Net profit", pdfMoney(report.summary.netProfit)]]
+    .map(([label, value]) => `<tr><th>${label}</th><td>${value}</td></tr>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    @page{size:A4;margin:18mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172033;font-size:10px}h1{font-size:22px;margin:0 0 4px}h2{font-size:14px;margin:22px 0 8px;border-bottom:2px solid #172033;padding-bottom:5px}.meta{color:#667085;margin-bottom:18px}table{width:100%;border-collapse:collapse;margin-bottom:12px}th,td{border:1px solid #d9dee8;padding:7px 8px;text-align:left}thead th{background:#eef2f7;font-weight:700}tbody tr:nth-child(even){background:#fafbfc}.summary th{width:70%;background:#f5f7fa}.summary td{text-align:right;font-weight:700}.empty{text-align:center;color:#667085;padding:16px;border:1px solid #d9dee8}
+  </style></head><body><h1>${htmlEscape(report.title || "HBMS Report")}</h1><div class="meta">${htmlEscape(report.rangeLabel)} · Generated ${htmlEscape(report.generatedAt)}</div>
+  <h2>Summary of ${htmlEscape(report.periodLabel)}</h2><table class="summary"><tbody>${summary}</tbody></table>
+  <h2>All Bills</h2>${bills ? `<table><thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Subtotal</th><th>Net</th><th>Due</th></tr></thead><tbody>${bills}</tbody></table>` : '<div class="empty">No bills in this period.</div>'}
+  <h2>Returns</h2>${returns ? `<table><thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Amount</th><th>Reason</th></tr></thead><tbody>${returns}</tbody></table>` : '<div class="empty">No returns in this period.</div>'}
+  </body></html>`;
+  const pdfWindow = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+  try {
+    await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    const pdf = await pdfWindow.webContents.printToPDF({ printBackground: true, pageSize: "A4" });
+    fs.writeFileSync(result.filePath, pdf);
+    return result.filePath;
+  } finally { pdfWindow.close(); }
 });
 
 app.whenReady().then(createWindow);

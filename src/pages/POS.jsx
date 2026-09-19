@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   UserPlus,
   CheckCircle2,
@@ -30,6 +31,7 @@ export default function POS() {
     completeSale,
     upsertBillDraft,
     removeBillDraft,
+    billDrafts,
   } = useAppData();
   const { showToast } = useToast();
 
@@ -53,6 +55,25 @@ export default function POS() {
   const [success, setSuccess] = useState(false);
   const [showEarnings, setShowEarnings] = useState(false);
   const [draftId, setDraftId] = useState(() => `DRAFT-${Date.now()}`);
+  const [searchParams] = useSearchParams();
+  const draftToOpen = searchParams.get("draft");
+  const loadedDraftRef = useRef("");
+
+  useEffect(() => {
+    if (!draftToOpen || loadedDraftRef.current === draftToOpen) return;
+    const draft = (billDrafts || []).find((item) => item.id === draftToOpen);
+    if (!draft || !Array.isArray(draft.lineItems)) return;
+    loadedDraftRef.current = draftToOpen;
+    setDraftId(draft.id);
+    setCart(draft.lineItems);
+    setCustomerId(draft.customerId || "");
+    setDiscountType(draft.discountType || "none");
+    setDiscountValue(draft.discountValue ? String(draft.discountValue) : "");
+    setPaid(draft.paid ? String(draft.paid) : "");
+    setPaidTouched(true);
+    setMethod(draft.method || "Cash");
+  }, [billDrafts, draftToOpen]);
+
 
   useEffect(() => {
     const clean = () => document.body.classList.remove("receipt-mode");
@@ -626,3 +647,7 @@ function CustomerSearchList({ customers, onSelect }) {
     </>
   );
 }
+
+
+
+

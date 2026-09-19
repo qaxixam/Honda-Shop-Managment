@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { CalendarDays, FileText, Search } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { CalendarDays, FileText, Search, Trash2 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import { Input, Panel, Select, Status } from "../components/ui";
 import { useAppData } from "../context/AppDataContext";
@@ -11,7 +11,8 @@ const currentYear = new Date().getFullYear();
 const currentMonth = todayISO().slice(0, 7);
 
 export default function BillHistory() {
-  const { sales, billDrafts } = useAppData();
+  const { sales, billDrafts, removeBillDraft } = useAppData();
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("All");
   const [status, setStatus] = useState("All");
@@ -173,7 +174,7 @@ export default function BillHistory() {
                           {row.ref}
                         </Link>
                       ) : (
-                        row.ref
+                        <button type="button" className="font-medium tabular-nums text-hm-text hover:underline" onClick={() => navigate(`/pos?draft=${encodeURIComponent(row.id)}`)}>{row.ref}</button>
                       )}
                     </div>
                     <div className="mt-0.5">
@@ -208,7 +209,14 @@ export default function BillHistory() {
                     {money(row.profit)}
                   </td>
                   <td className="px-4">
-                    <Status tone={statusTone(row)}>{paymentLabel(row)}</Status>
+                    <div className="flex items-center justify-between gap-3">
+                      <Status tone={statusTone(row)}>{paymentLabel(row)}</Status>
+                      {row.kind === "Unsaved" && (
+                        <button type="button" onClick={() => removeBillDraft(row.id)} className="grid h-8 w-8 place-items-center rounded-hm-sm text-hm-text-subtle hover:bg-hm-danger-soft hover:text-hm-danger" aria-label={`Delete draft ${row.id}`} title="Delete draft">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -302,3 +310,6 @@ function Stat({ label, value, tone = "default" }) {
     </div>
   );
 }
+
+
+

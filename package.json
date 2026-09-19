@@ -1,6 +1,7 @@
 {
   "name": "hbms-react",
   "private": true,
+  "main": "electron/main.cjs",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -10,14 +11,15 @@
     "check": "npm run test && npm run build",
     "preview": "vite preview",
     "dev:electron": "concurrently -k \"npm:dev\" \"npm:electron:wait\"",
-    "electron:wait": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
-    "electron": "cross-env NODE_ENV=development electron .",
+    "electron:wait": "wait-on tcp:5173 && cross-env NODE_ENV=development electron electron/main.cjs",
+    "electron": "cross-env NODE_ENV=development electron electron/main.cjs",
     "build:electron": "npm run build && electron-builder --win",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-dropdown-menu": "^2.1.2",
+    "better-sqlite3": "^13.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

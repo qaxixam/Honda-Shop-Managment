@@ -14,6 +14,8 @@ import {
   UserCog,
   RotateCcw,
   History,
+  Banknote,
+  Settings,
 } from "lucide-react";
 
 const groups = [
@@ -35,6 +37,8 @@ const groups = [
       ["Suppliers", "/suppliers", Truck],
       ["Expenses", "/expenses", WalletCards],
       ["Employees", "/employees", UserCog],
+      ["Salaries", "/salaries", Banknote],
+      ["Shop & Backup", "/shop", Settings],
     ],
   },
   {

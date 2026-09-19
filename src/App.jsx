@@ -19,11 +19,10 @@ import { ToastProvider } from "./components/ui";
 import CustomerDetail from "./pages/CustomerDetail";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import SupplierDetail from "./pages/SupplierDetail";
-import { products } from "./data/products";
+import Salaries from "./pages/Salaries";
+import ShopSettings from "./pages/ShopSettings";
 export default function App() {
   const [open, setOpen] = useState(false);
-  console.log(products);
-
   return (
     <AppDataProvider>
       <ToastProvider>
@@ -47,6 +46,8 @@ export default function App() {
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/employees/:id" element={<EmployeeDetail />} />
+                <Route path="/salaries" element={<Salaries />} />
+                <Route path="/shop" element={<ShopSettings />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/insights/:type" element={<InsightDetail />} />
                 <Route path="/insights/:type/:id" element={<InsightDetail />} />

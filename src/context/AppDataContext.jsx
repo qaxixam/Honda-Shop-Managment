@@ -1,15 +1,5 @@
 import React from "react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import {
-  products as seedProducts,
-  services as seedServices,
-  customers as seedCustomers,
-  sales as seedSales,
-  expenses as seedExpenses,
-  suppliers as seedSuppliers,
-  employees as seedEmployees,
-  advances as seedAdvances,
-} from "../data";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { findStockIssue } from "../lib/inventory";
 import { todayISO } from "../lib/utils";
 
@@ -17,40 +7,42 @@ const KEY = "hbms_store_v4";
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 const initial = {
-  products: clone(seedProducts),
-  services: clone(seedServices),
-  customers: clone(seedCustomers),
-  sales: clone(seedSales),
+  products: [],
+  services: [],
+  customers: [],
+  sales: [],
   billDrafts: [],
   returns: [],
-  expenses: clone(seedExpenses),
-  suppliers: clone(seedSuppliers).map((s) => ({
-    ...s,
-    purchases: s.purchases || [],
-    payments: s.payments || [],
-  })),
-  employees: clone(seedEmployees),
-  advances: clone(seedAdvances),
+  expenses: [],
+  suppliers: [],
+  employees: [],
+  advances: [],
+  salaryPayments: [],
 };
 
 const AppDataContext = createContext(null);
 
 export function AppDataProvider({ children }) {
   const [data, setData] = useState(() => clone(initial));
+  const hydrated = useRef(false);
 
   useEffect(() => {
-    try {
-      console.log("checking the data");
-
-      console.log(data.products);
-
-      localStorage.removeItem(KEY);
-      localStorage.removeItem("hbms_store_v3");
-      localStorage.removeItem("hbms_store_v2");
-    } catch {
-      // Browser storage can be unavailable in restricted desktop/webview modes.
-    }
+    const load = async () => {
+      try {
+        const saved = window.hbmsDesktop ? await window.hbmsDesktop.load() : localStorage.getItem(KEY);
+        if (saved) setData({ ...clone(initial), ...JSON.parse(saved) });
+      } catch { /* Start with a clean store if the database is unavailable. */ }
+      hydrated.current = true;
+    };
+    load();
   }, []);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    const serialized = JSON.stringify(data);
+    if (window.hbmsDesktop) window.hbmsDesktop.save(data);
+    else localStorage.setItem(KEY, serialized);
+  }, [data]);
 
   const updateCollection = (key, updater) =>
     setData((prev) => ({
@@ -383,6 +375,35 @@ export function AppDataProvider({ children }) {
   const deleteAdvance = (id) =>
     updateCollection("advances", (items) => items.filter((a) => a.id !== id));
 
+  const addSalaryPayment = (payment) => {
+    const amount = Math.max(0, Number(payment.amount) || 0);
+    if (!payment.employeeId || !amount) return null;
+    const record = {
+      id: `SAL-${Date.now()}`,
+      expenseId: `EXP-SAL-${Date.now()}`,
+      employeeId: payment.employeeId,
+      amount,
+      date: String(payment.date || todayISO()).slice(0, 10),
+      note: (payment.note || "").trim(),
+    };
+    updateCollection("salaryPayments", (items) => [record, ...items]);
+    const employee = data.employees.find((item) => item.id === payment.employeeId);
+    addExpense({
+      id: record.expenseId,
+      date: record.date,
+      type: `Salary - ${employee?.name || "Employee"}`,
+      amount,
+      note: record.note || "Employee salary payment",
+    });
+    return record.id;
+  };
+
+  const deleteSalaryPayment = (id) => {
+    updateCollection("salaryPayments", (items) => items.filter((item) => item.id !== id));
+    const payment = data.salaryPayments.find((item) => item.id === id);
+    if (payment?.expenseId) deleteExpense(payment.expenseId);
+  };
+
   const value = useMemo(
     () => ({
       ...data,
@@ -427,6 +448,8 @@ export function AppDataProvider({ children }) {
       deleteEmployee: employee.remove,
       addAdvance,
       deleteAdvance,
+      addSalaryPayment,
+      deleteSalaryPayment,
       completeSale,
       recordReturn,
       resetData: () => setData(clone(initial)),
